@@ -7,6 +7,8 @@ Configuration manager for network devices.
    :maxdepth: 3
 
    introduction
+   homer
+   api/index
 
 .. toctree::
    :maxdepth: 2

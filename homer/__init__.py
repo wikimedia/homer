@@ -1,4 +1,6 @@
 """Homer package."""
+import logging
+
 from pkg_resources import DistributionNotFound, get_distribution
 
 try:
@@ -6,3 +8,12 @@ try:
     """:py:class:`str`: the version of the current Homer package."""
 except DistributionNotFound:  # pragma: no cover - this should never happen during tests
     pass  # package is not installed
+
+
+logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+
+
+def execute(config: dict, action: str, query: str) -> None:
+    """Execute Homer based on the given configuration, action and query."""
+    logger.debug('Initialized with configuration: %s', config)
+    logger.info('Executing %s on %s', action, query)

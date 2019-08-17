@@ -1,4 +1,4 @@
-"""Tests for homer's __init__ module."""
+"""__init__ module tests."""
 import homer
 
 

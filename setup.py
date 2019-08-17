@@ -55,7 +55,7 @@ setup(
     description='Configuration manager for network devices',
     entry_points={
         'console_scripts': [
-            # TODO
+            'homer = homer.cli:main',
         ],
     },
     extras_require=EXTRAS_REQUIRE,
