@@ -13,4 +13,5 @@ Homer Python API autodoc.
 .. toctree::
 
    homer.config
+   homer.devices
    homer.exceptions

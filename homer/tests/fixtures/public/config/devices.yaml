@@ -1,0 +1,11 @@
+device1.example.com:
+  role: roleA
+  site: siteA
+  config:
+    device_key: device_value
+
+device2.example.com:
+  role: roleB
+  site: siteB
+  config:
+    device_key: device_value

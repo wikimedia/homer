@@ -1,0 +1,3 @@
+base_paths:
+  public: homer/tests/fixtures/public
+  private: homer/tests/fixtures/private
