@@ -8,6 +8,7 @@ with open('README.rst', 'r') as readme:
 
 
 INSTALL_REQUIRES = [
+    'pyyaml>=3.11',
 ]
 
 # Extra dependencies
