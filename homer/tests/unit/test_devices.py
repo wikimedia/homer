@@ -12,7 +12,10 @@ class TestDevices:
     def setup_method(self):
         """Initialize the test instances."""
         # pylint: disable=attribute-defined-outside-init
-        self.devices = Devices(load_yaml_config(get_fixture_path('public', 'config', 'devices.yaml')))
+        self.devices = Devices(load_yaml_config(get_fixture_path('public', 'config', 'devices.yaml')), {})
+        self.devices_with_private = Devices(
+            load_yaml_config(get_fixture_path('public', 'config', 'devices.yaml')),
+            load_yaml_config(get_fixture_path('private', 'config', 'devices.yaml')))
 
     def test_init(self):
         """An instance of Devices should be also an instance of UserDict."""
@@ -45,3 +48,8 @@ class TestDevices:
         """Should return the device with the given FQDN."""
         device = self.devices['device1.example.com']
         assert isinstance(device, Device)
+
+    def test_private_config(self):
+        """Should include the device-specific private config only when set."""
+        assert self.devices['device1.example.com'].private == {}
+        assert self.devices_with_private['device1.example.com'].private['device_private_key'] == 'device_private_value'

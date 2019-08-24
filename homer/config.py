@@ -1,4 +1,5 @@
 """Config module."""
+import itertools
 import os
 
 from copy import deepcopy
@@ -43,21 +44,29 @@ def load_yaml_config(config_file: str) -> Dict:
 class HierarchicalConfig:
     """Load configuration with hierarchical override based on role, site and device."""
 
-    def __init__(self, base_path: str):
+    def __init__(self, base_path: str, private_base_path: str = ''):
         """Initialize the instance.
 
         Arguments:
             base_path (str): the base path from where the configuration files should be loaded. The configuration
                 files that will be loaded, if existing, are:
                 - ``common.yaml``: common key:value pairs
-                - ``roles.yaml``: one key for each role with key:valye pairs of role-specific configuration
-                - ``sites.yaml``: one key for each site with key:valye pairs of role-specific configuration
+                - ``roles.yaml``: one key for each role with key:value pairs of role-specific configuration
+                - ``sites.yaml``: one key for each site with key:value pairs of role-specific configuration
+            private_base_path (str, optional): the base path from where the private configuration files should be
+                loaded, with the same structure of the above ``base_path`` argument. If existing, private
+                configuration files cannot have top level keys in common with the public configuration.
 
         """
-        # Not using setattr dynamically to allow mypy to work.
-        self._common = load_yaml_config(os.path.join(base_path, 'common.yaml'))
-        self._roles = load_yaml_config(os.path.join(base_path, 'roles.yaml'))
-        self._sites = load_yaml_config(os.path.join(base_path, 'sites.yaml'))
+        self._configs = {}  # type: Dict[str, Dict]
+        paths = {'public': base_path, 'private': private_base_path}
+        for path, name in itertools.product(paths.keys(), ('common', 'roles', 'sites')):
+            if paths[path]:
+                config = load_yaml_config(os.path.join(paths[path], 'config', '{name}.yaml'.format(name=name)))
+            else:
+                config = {}
+
+            self._configs['{p}_{n}'.format(p=path, n=name)] = config
 
     def get(self, device: Device) -> Dict:
         """Get the generated configuration for a specific device instance with all the overrides resolved.
@@ -65,12 +74,28 @@ class HierarchicalConfig:
         Arguments:
             device (homer.devices.Device): the device instance.
 
+        Raises:
+            homer.exceptions.HomerError: if any top level key is present in both the private and public configuration.
+
         Returns:
             dict: the generated device-specific configuration dictionary. The override order is:
-            ``common``, ``role``, ``site``, ``device``.
+            ``common``, ``role``, ``site``, ``device``. Public and private configuration are merged together.
 
         """
-        common = deepcopy(self._common)
-        role = deepcopy(self._roles.get(device.role, {}))
-        site = deepcopy(self._sites.get(device.site, {}))
-        return {**common, **role, **site, **device.config}
+        public = {
+            **self._configs['public_common'],
+            **self._configs['public_roles'].get(device.role, {}),
+            **self._configs['public_sites'].get(device.site, {}),
+            **device.config,
+        }
+        private = {
+            **self._configs['private_common'],
+            **self._configs['private_roles'].get(device.role, {}),
+            **self._configs['private_sites'].get(device.site, {}),
+            **device.private,
+        }
+        if public.keys() & private.keys():
+            raise HomerError('Configuration key(s) found in both public and private config: {keys}'.format(
+                keys=public.keys() & private.keys()))
+
+        return {**deepcopy(public), **deepcopy(private)}

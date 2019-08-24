@@ -1,0 +1,2 @@
+device1.example.com:
+  device_private_key: device_private_value

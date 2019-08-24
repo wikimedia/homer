@@ -3,18 +3,21 @@ from collections import defaultdict, UserDict
 from typing import Any, Dict, List, NamedTuple
 
 
-Device = NamedTuple('Device', [('fqdn', str), ('role', str), ('site', str), ('config', Dict)])
+Device = NamedTuple('Device', [('fqdn', str), ('role', str), ('site', str), ('config', Dict), ('private', Dict)])
 
 
 class Devices(UserDict):  # pylint: disable=too-many-ancestors
     """Collection of devices, accessible by FQDN as a dict or role and site via dedicated accessors."""
 
-    def __init__(self, devices: Dict[str, Dict[Any, Any]]):
+    def __init__(self, devices: Dict[str, Dict[Any, Any]], private_config: Dict[str, Any]):
         """Initialize the instance.
 
         Arguments:
             devices (dict): the devices configuration with FQDN as key and a dictionary with role, site and
                 device-specific configuration as value.
+            private_config (dict, optional): an optional devices private configuration with FQDN as key and a
+                dictionary of device-specific configuration as value. It cannot have top level keys in common with the
+                same device public configuration.
 
         """
         super().__init__()
@@ -22,7 +25,7 @@ class Devices(UserDict):  # pylint: disable=too-many-ancestors
         self._sites = defaultdict(list)  # type: defaultdict
 
         for fqdn, data in devices.items():
-            device = Device(fqdn, data['role'], data['site'], data['config'])
+            device = Device(fqdn, data['role'], data['site'], data['config'], private_config.get(fqdn, {}))
             self.data[fqdn] = device
             self._roles[device.role].append(device)
             self._sites[device.site].append(device)

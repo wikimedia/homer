@@ -1,0 +1,4 @@
+roleA:
+  role_private_key: role_private_value
+  site_private_key: role_private_value
+  device_private_key: role_private_value

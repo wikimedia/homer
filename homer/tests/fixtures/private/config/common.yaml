@@ -1,0 +1,4 @@
+common_private_key: common_private_value
+role_private_key: common_private_value
+site_private_key: common_private_value
+device_private_key: common_private_value

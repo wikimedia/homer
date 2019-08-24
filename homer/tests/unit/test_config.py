@@ -25,10 +25,31 @@ def test_load_yaml_config_valid():
     assert 'key' in config_dict
 
 
-def test_hierarchical_config_get():
+def test_hierarchical_config_get_no_private():
     """Calling the get() method on an instance of HierarchicalConfig should return the config for a given Device."""
-    device = Device('device1.example.com', 'roleA', 'siteA', {'device_key': 'device_value'})
-    config = HierarchicalConfig(get_fixture_path('public', 'config'))
+    device = Device('device1.example.com', 'roleA', 'siteA', {'device_key': 'device_value'}, {})
+    config = HierarchicalConfig(get_fixture_path('public'))
     expected = {'common_key': 'common_value', 'role_key': 'role_value', 'site_key': 'site_value',
                 'device_key': 'device_value'}
     assert config.get(device) == expected
+
+
+def test_hierarchical_config_get_with_private():
+    """Calling the get() method on an instance of HierarchicalConfig should include the private config, if any."""
+    device = Device('device1.example.com', 'roleA', 'siteA', {'device_key': 'device_value'},
+                    {'device_private_key': 'device_private_value'})
+    config = HierarchicalConfig(get_fixture_path('public'), get_fixture_path('private'))
+    expected = {'common_key': 'common_value', 'role_key': 'role_value', 'site_key': 'site_value',
+                'device_key': 'device_value', 'common_private_key': 'common_private_value',
+                'role_private_key': 'role_private_value', 'site_private_key': 'site_private_value',
+                'device_private_key': 'device_private_value'}
+    assert config.get(device) == expected
+
+
+def test_hierarchical_config_get_duplicate_keys():
+    """If there are duplicate keys between public and private configuration."""
+    device = Device('device1.example.com', 'roleA', 'siteA', {'device_key': 'device_value'},
+                    {'role_key': 'duplicated_key'})
+    config = HierarchicalConfig(get_fixture_path('public'), get_fixture_path('private'))
+    with pytest.raises(HomerError, match=r'Configuration key\(s\) found in both public and private config'):
+        config.get(device)
