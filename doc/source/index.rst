@@ -7,6 +7,7 @@ Configuration manager for network devices.
    :maxdepth: 3
 
    introduction
+   configuration
    homer
    api/index
 
