@@ -9,3 +9,9 @@ device2.example.com:
   site: siteB
   config:
     device_key: device_value
+
+another.example.com:
+  role: roleA
+  site: siteB
+  config:
+    device_key: device_value

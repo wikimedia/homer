@@ -1,6 +1,10 @@
 """Devices module."""
+import fnmatch
+
 from collections import defaultdict, UserDict
 from typing import Any, Dict, List, NamedTuple
+
+from homer.exceptions import HomerError
 
 
 Device = NamedTuple('Device', [('fqdn', str), ('role', str), ('site', str), ('config', Dict), ('private', Dict)])
@@ -8,6 +12,9 @@ Device = NamedTuple('Device', [('fqdn', str), ('role', str), ('site', str), ('co
 
 class Devices(UserDict):  # pylint: disable=too-many-ancestors
     """Collection of devices, accessible by FQDN as a dict or role and site via dedicated accessors."""
+
+    role_prefix = 'role'
+    site_prefix = 'site'
 
     def __init__(self, devices: Dict[str, Dict[Any, Any]], private_config: Dict[str, Any]):
         """Initialize the instance.
@@ -57,3 +64,28 @@ class Devices(UserDict):  # pylint: disable=too-many-ancestors
         if name in self._sites:  # Avoid to create empty objects in defaultdict
             return self._sites[name]
         return []
+
+    def query(self, query_string: str) -> List[Device]:
+        """Get the devices matching the query.
+
+        Todo:
+            If needed, expand the query capabilities with a proper syntax using pyparsing.
+
+        Arguments:
+            query_string (str): the query_string to use to filter for.
+
+        Raises:
+            homer.exceptions.HomerError: on invalid query.
+
+        Returns:
+            list: a list of Device objects.
+
+        """
+        if ':' in query_string:  # Role or site query
+            prefix, query = query_string.split(':', 1)
+            if prefix not in (self.role_prefix, self.site_prefix):
+                raise HomerError('Unknown query prefix: {prefix}'.format(prefix=prefix))
+            return getattr(self, prefix)(query)
+
+        # FQDN query
+        return [device for fqdn, device in self.items() if fnmatch.fnmatch(fqdn, query_string)]
