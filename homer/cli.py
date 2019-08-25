@@ -24,8 +24,8 @@ def argument_parser() -> argparse.ArgumentParser:
     group.add_argument('-q', '--quiet', action='store_const', const=logging.WARN, dest='loglevel',
                        help='Silent mode, only log warnings',)
     parser.add_argument('-c', '--config', default='/etc/homer/config.yaml', help='Main configuration file to load.')
-    parser.add_argument('action', choices=('compile', 'diff', 'commit'),
-                        help=('Select which action to perform. Use compile to just compile the configurations '
+    parser.add_argument('action', choices=('generate', 'diff', 'commit'),
+                        help=('Select which action to perform. Use generate to just generate the configurations '
                               'locally, diff to perform a commit check on the target devices and commit to apply the '
                               'configuration to the target devices.'))
     parser.add_argument('query', help='Select which devices to target')

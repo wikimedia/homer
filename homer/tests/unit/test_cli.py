@@ -13,4 +13,4 @@ def test_argument_parser():
 def test_main():
     """It should execute the whole program based on CLI arguments."""
     config_path = get_fixture_path('cli', 'config.yaml')
-    assert cli.main(['-c', config_path, 'compile', 'test.example.com']) is None
+    assert cli.main(['-c', config_path, 'generate', 'test.example.com']) is None
