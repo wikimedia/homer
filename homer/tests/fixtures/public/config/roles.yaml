@@ -1,4 +1,9 @@
 roleA:
-  role_key: role_value
-  site_key: role_value
-  device_key: role_value
+  role_key: roleA_value
+  site_key: roleA_value
+  device_key: roleA_value
+
+roleB:
+  role_key: roleB_value
+  site_key: roleB_value
+  device_key: roleB_value

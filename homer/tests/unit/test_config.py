@@ -27,22 +27,22 @@ def test_load_yaml_config_valid():
 
 def test_hierarchical_config_get_no_private():
     """Calling the get() method on an instance of HierarchicalConfig should return the config for a given Device."""
-    device = Device('device1.example.com', 'roleA', 'siteA', {'device_key': 'device_value'}, {})
+    device = Device('device1.example.com', 'roleA', 'siteA', {'device_key': 'device1_value'}, {})
     config = HierarchicalConfig(get_fixture_path('public'))
-    expected = {'common_key': 'common_value', 'role_key': 'role_value', 'site_key': 'site_value',
-                'device_key': 'device_value'}
+    expected = {'common_key': 'common_value', 'role_key': 'roleA_value', 'site_key': 'siteA_value',
+                'device_key': 'device1_value'}
     assert config.get(device) == expected
 
 
 def test_hierarchical_config_get_with_private():
     """Calling the get() method on an instance of HierarchicalConfig should include the private config, if any."""
-    device = Device('device1.example.com', 'roleA', 'siteA', {'device_key': 'device_value'},
-                    {'device_private_key': 'device_private_value'})
+    device = Device('device1.example.com', 'roleA', 'siteA', {'device_key': 'device1_value'},
+                    {'device_private_key': 'device1_private_value'})
     config = HierarchicalConfig(get_fixture_path('public'), get_fixture_path('private'))
-    expected = {'common_key': 'common_value', 'role_key': 'role_value', 'site_key': 'site_value',
-                'device_key': 'device_value', 'common_private_key': 'common_private_value',
-                'role_private_key': 'role_private_value', 'site_private_key': 'site_private_value',
-                'device_private_key': 'device_private_value'}
+    expected = {'common_key': 'common_value', 'role_key': 'roleA_value', 'site_key': 'siteA_value',
+                'device_key': 'device1_value', 'common_private_key': 'common_private_value',
+                'role_private_key': 'roleA_private_value', 'site_private_key': 'siteA_private_value',
+                'device_private_key': 'device1_private_value'}
     assert config.get(device) == expected
 
 

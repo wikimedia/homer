@@ -1,3 +1,7 @@
 siteA:
-  site_key: site_value
-  device_key: site_value
+  site_key: siteA_value
+  device_key: siteA_value
+
+siteB:
+  site_key: siteB_value
+  device_key: siteB_value

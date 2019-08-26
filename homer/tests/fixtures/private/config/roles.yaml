@@ -1,4 +1,9 @@
 roleA:
-  role_private_key: role_private_value
-  site_private_key: role_private_value
-  device_private_key: role_private_value
+  role_private_key: roleA_private_value
+  site_private_key: roleA_private_value
+  device_private_key: roleA_private_value
+
+roleB:
+  role_private_key: roleB_private_value
+  site_private_key: roleB_private_value
+  device_private_key: roleB_private_value

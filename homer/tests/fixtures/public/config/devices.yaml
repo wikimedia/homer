@@ -2,16 +2,28 @@ device1.example.com:
   role: roleA
   site: siteA
   config:
-    device_key: device_value
+    device_key: device1_value
 
 device2.example.com:
   role: roleB
   site: siteB
   config:
-    device_key: device_value
+    device_key: device2_value
 
 another.example.com:
   role: roleA
   site: siteB
   config:
-    device_key: device_value
+    device_key: another_value
+
+invalid.example.com:
+  role: roleInvalid
+  site: siteC
+  config:
+    device_key: invalid_value
+
+valid.example.com:
+  role: roleC
+  site: siteC
+  config:
+    device_key: valid_value

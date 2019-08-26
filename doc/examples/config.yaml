@@ -3,3 +3,5 @@ base_paths:
   public: /path/to/public-config-and-templates-root
   # [optional] Base path of private configuration.
   private: /path/to/private-config-and-templates-root
+  # Base path for the output files generated on the 'generate' action. The directory will be cleaned from all '*.out' files.
+  output: /path/where/to/generate/output/files

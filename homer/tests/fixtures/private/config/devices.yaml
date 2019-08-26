@@ -1,2 +1,8 @@
 device1.example.com:
-  device_private_key: device_private_value
+  device_private_key: device1_private_value
+
+device2.example.com:
+  device_private_key: device2_private_value
+
+another.example.com:
+  device_private_key: another_private_value

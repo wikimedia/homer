@@ -56,7 +56,8 @@ class TestDevices:
     def test_private_config(self):
         """Should include the device-specific private config only when set."""
         assert self.devices['device1.example.com'].private == {}
-        assert self.devices_with_private['device1.example.com'].private['device_private_key'] == 'device_private_value'
+        private_value = self.devices_with_private['device1.example.com'].private['device_private_key']
+        assert private_value == 'device1_private_value'
 
     def test_query_role(self):
         """Should return all the devices with a given role."""
