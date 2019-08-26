@@ -33,11 +33,14 @@ def argument_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: Optional[list] = None) -> None:
+def main(argv: Optional[list] = None) -> int:
     """Run the Homer CLI.
 
     Arguments:
         argv (list): the command line arguments to parse.
+
+    Returns:
+        int: ``0`` on success, ``1`` on failure.
 
     """
     args = argument_parser().parse_args(argv)

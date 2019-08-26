@@ -8,6 +8,7 @@ with open('README.rst', 'r') as readme:
 
 
 INSTALL_REQUIRES = [
+    'Jinja2>=2.10',
     'pyyaml>=3.11',
 ]
 
