@@ -1,5 +1,6 @@
 """Devices module."""
 import fnmatch
+import logging
 
 from collections import defaultdict, UserDict
 from typing import Any, Dict, List, NamedTuple
@@ -8,6 +9,7 @@ from homer.exceptions import HomerError
 
 
 Device = NamedTuple('Device', [('fqdn', str), ('role', str), ('site', str), ('config', Dict), ('private', Dict)])
+logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
 class Devices(UserDict):  # pylint: disable=too-many-ancestors
@@ -36,6 +38,9 @@ class Devices(UserDict):  # pylint: disable=too-many-ancestors
             self.data[fqdn] = device
             self._roles[device.role].append(device)
             self._sites[device.site].append(device)
+
+        logger.info('Initialized %d devices in %d role(s) and %d site(s)',
+                    len(self.data), len(self._roles), len(self._sites))
 
     def role(self, name: str) -> List[Device]:
         """Get all the devices with a specific role.
@@ -85,7 +90,9 @@ class Devices(UserDict):  # pylint: disable=too-many-ancestors
             prefix, query = query_string.split(':', 1)
             if prefix not in (self.role_prefix, self.site_prefix):
                 raise HomerError('Unknown query prefix: {prefix}'.format(prefix=prefix))
-            return getattr(self, prefix)(query)
+            results = getattr(self, prefix)(query)
+        else:  # FQDN query
+            results = [device for fqdn, device in self.items() if fnmatch.fnmatch(fqdn, query_string)]
 
-        # FQDN query
-        return [device for fqdn, device in self.items() if fnmatch.fnmatch(fqdn, query_string)]
+        logger.info("Matched %d device(s) for query '%s'", len(results), query_string)
+        return results
