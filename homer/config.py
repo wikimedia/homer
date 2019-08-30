@@ -87,6 +87,7 @@ class HierarchicalConfig:
             **self._configs['public_roles'].get(device.role, {}),
             **self._configs['public_sites'].get(device.site, {}),
             **device.config,
+            **{'role': device.role, 'site': device.site},  # Inject also role and site
         }
         private = {
             **self._configs['private_common'],

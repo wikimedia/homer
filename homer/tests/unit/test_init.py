@@ -47,6 +47,8 @@ def test_execute_generate_ok(tmp_path):
              if out_file.is_file() and out_file.suffix == homer.OUT_EXTENSION]
     assert sorted(files) == ['device1.example.com.out', 'device2.example.com.out']
     expected = """
+        roleB;
+        siteB;
         common_value;
         roleB_value;
         siteB_value;
@@ -72,6 +74,8 @@ def test_execute_no_private(tmp_path):
              if out_file.is_file() and out_file.suffix == homer.OUT_EXTENSION]
     assert sorted(files) == ['device1.example.com.out', 'device2.example.com.out']
     expected = """
+        roleB;
+        siteB;
         common_value;
         roleB_value;
         siteB_value;
