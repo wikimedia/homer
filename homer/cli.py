@@ -45,6 +45,8 @@ def main(argv: Optional[list] = None) -> int:
     """
     args = argument_parser().parse_args(argv)
     logging.basicConfig(level=args.loglevel)
+    if args.loglevel != logging.DEBUG:  # Suppress noisy loggers
+        logging.getLogger('ncclient').setLevel(logging.WARNING)
     config = load_yaml_config(args.config)
 
     return execute(config, args.action, args.query)
