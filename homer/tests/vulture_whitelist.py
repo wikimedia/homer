@@ -11,3 +11,8 @@ class Whitelist:
 
 whitelist_tests = Whitelist()
 whitelist_tests.unit.test_devices.TestDevices.setup_method
+
+# Needed for vulture < 0.27
+whitelist_mock = Whitelist()
+whitelist_mock.return_value
+whitelist_mock.side_effect

@@ -1,6 +1,8 @@
 """__init__ module tests."""
 import textwrap
 
+from unittest import mock
+
 import pytest
 
 import homer
@@ -91,9 +93,11 @@ def test_execute_generate_fail_to_render(tmp_path):
     assert files == ['valid.example.com.out']
 
 
-def test_execute_diff_ok(tmp_path):
+@mock.patch('homer.transports.junos.JunOSDevice')
+def test_execute_diff_ok(mocked_device, tmp_path):
     """It should diff the compiled configuration with the live one."""
     _, config = setup_tmp_path(tmp_path)
     # TODO: to be completed once the diff feature is added
     ret = homer.execute(config, 'diff', 'device*')
     assert ret == 0
+    assert mocked_device.called

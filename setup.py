@@ -9,6 +9,7 @@ with open('README.rst', 'r') as readme:
 
 INSTALL_REQUIRES = [
     'Jinja2>=2.10',
+    'junos-eznc>=2.2.1,<3',
     'pyyaml>=3.11',
 ]
 
@@ -23,7 +24,7 @@ EXTRAS_REQUIRE = {
         'prospector[with_everything]>=0.12.4',
         'pytest-cov>=1.8.0',
         'pytest-xdist>=1.15.0',
-        'pytest>=3.0.3',
+        'pytest>=3.3.0',
         'requests-mock>=1.3.0',
         'sphinx_rtd_theme>=0.1.6',
         'sphinx-argparse>=0.1.15',

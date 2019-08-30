@@ -3,6 +3,7 @@ import logging
 import os
 import pathlib
 
+from collections import defaultdict
 from typing import Dict
 
 from pkg_resources import DistributionNotFound, get_distribution
@@ -11,6 +12,7 @@ from homer.config import HierarchicalConfig, load_yaml_config
 from homer.devices import Devices
 from homer.exceptions import HomerError
 from homer.templates import Renderer
+from homer.transports.junos import connected_device
 
 
 try:
@@ -24,7 +26,7 @@ OUT_EXTENSION = '.out'
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
-def execute(main_config: Dict, action: str, query: str) -> int:
+def execute(main_config: Dict, action: str, query: str) -> int:  # # noqa: MC0001 pylint: disable=too-many-locals
     """Execute Homer based on the given configuration, action and query.
 
     Arguments:
@@ -36,6 +38,7 @@ def execute(main_config: Dict, action: str, query: str) -> int:
         int: ``0`` on success, ``1`` on failure.
 
     """
+    # TODO: convert to a class with methods
     if action not in ACTIONS:
         raise HomerError('Invalid action {action}, expected one of: {actions}'.format(action=action, actions=ACTIONS))
 
@@ -55,14 +58,15 @@ def execute(main_config: Dict, action: str, query: str) -> int:
     if action == 'generate':
         _prepare_out_dir(output_base_path)
 
-    failed = False
+    diffs = defaultdict(list)  # type: defaultdict
+    successes = {True: [], False: []}  # type: dict
     for device in devices:
         logger.info('Generating configuration for %s', device.fqdn)
         try:
             device_config = renderer.render(device.role, config.get(device))
         except HomerError:
             logger.exception('Device %s failed to render the template, skipping.', device.fqdn)
-            failed = True
+            successes[False].append(device.fqdn)
             continue
 
         if action == 'generate':
@@ -70,12 +74,23 @@ def execute(main_config: Dict, action: str, query: str) -> int:
             with open(str(output_path), 'w') as f:
                 f.write(device_config)
                 logger.info('Written configuration for %s in %s', device.fqdn, output_path)
+        elif action == 'diff':
+            with connected_device(device.fqdn) as connection:
+                device_success, device_diff = connection.commit_check(device_config)
+                diffs[device_diff].append(device.fqdn)
+                successes[device_success].append(device.fqdn)
 
-    if failed:
-        logger.error('Homer run had issues')
+    if action == 'diff':
+        for diff, diff_devices in diffs.items():
+            print('Diff for {n} devices: {devices}'.format(n=len(diff_devices), devices=diff_devices))
+            print(diff)
+            print('---------------')
+
+    if successes[False]:
+        logger.error('Homer run had issues on %d devices: %s', len(successes[False]), successes[False])
         return 1
 
-    logger.info('Homer run completed successfully')
+    logger.info('Homer run completed successfully on %d devices: %s', len(devices), [d.fqdn for d in devices])
     return 0
 
 

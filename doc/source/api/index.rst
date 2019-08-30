@@ -15,3 +15,4 @@ Homer Python API autodoc.
    homer.config
    homer.devices
    homer.exceptions
+   homer.transports
