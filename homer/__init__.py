@@ -46,7 +46,7 @@ def execute(main_config: Dict, action: str, query: str) -> int:  # # noqa: MC000
     logger.info('Executing %s on %s', action, query)
 
     private_base_path = main_config['base_paths'].get('private', '')
-    config = HierarchicalConfig(main_config['base_paths']['public'], private_base_path)
+    config = HierarchicalConfig(main_config['base_paths']['public'], private_base_path=private_base_path)
     devices_config = load_yaml_config(os.path.join(main_config['base_paths']['public'], 'config', 'devices.yaml'))
     private_devices_config = {}  # type: dict
     if private_base_path:

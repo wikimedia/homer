@@ -44,7 +44,7 @@ def load_yaml_config(config_file: str) -> Dict:
 class HierarchicalConfig:
     """Load configuration with hierarchical override based on role, site and device."""
 
-    def __init__(self, base_path: str, private_base_path: str = ''):
+    def __init__(self, base_path: str, *, private_base_path: str = ''):
         """Initialize the instance.
 
         Arguments:
