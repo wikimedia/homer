@@ -30,7 +30,7 @@ def test_hierarchical_config_get_no_private():
     device = Device('device1.example.com', 'roleA', 'siteA', {'device_key': 'device1_value'}, {})
     config = HierarchicalConfig(get_fixture_path('public'))
     expected = {'common_key': 'common_value', 'role_key': 'roleA_value', 'site_key': 'siteA_value',
-                'device_key': 'device1_value', 'role': 'roleA', 'site': 'siteA'}
+                'device_key': 'device1_value', 'role': 'roleA', 'site': 'siteA', 'hostname': 'device1.example.com'}
     assert config.get(device) == expected
 
 
@@ -42,7 +42,8 @@ def test_hierarchical_config_get_with_private():
     expected = {'common_key': 'common_value', 'role_key': 'roleA_value', 'site_key': 'siteA_value',
                 'device_key': 'device1_value', 'common_private_key': 'common_private_value',
                 'role_private_key': 'roleA_private_value', 'site_private_key': 'siteA_private_value',
-                'device_private_key': 'device1_private_value', 'role': 'roleA', 'site': 'siteA'}
+                'device_private_key': 'device1_private_value', 'role': 'roleA', 'site': 'siteA',
+                'hostname': 'device1.example.com'}
     assert config.get(device) == expected
 
 

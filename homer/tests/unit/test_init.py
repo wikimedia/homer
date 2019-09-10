@@ -49,6 +49,7 @@ def test_execute_generate_ok(tmp_path):
     expected = """
         roleB;
         siteB;
+        device2.example.com;
         common_value;
         roleB_value;
         siteB_value;
@@ -76,6 +77,7 @@ def test_execute_no_private(tmp_path):
     expected = """
         roleB;
         siteB;
+        device2.example.com;
         common_value;
         roleB_value;
         siteB_value;
