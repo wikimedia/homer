@@ -34,7 +34,7 @@ class Devices(UserDict):  # pylint: disable=too-many-ancestors
         self._sites = defaultdict(list)  # type: defaultdict
 
         for fqdn, data in devices.items():
-            device = Device(fqdn, data['role'], data['site'], data['config'], private_config.get(fqdn, {}))
+            device = Device(fqdn, data['role'], data['site'], data.get('config', {}), private_config.get(fqdn, {}))
             self.data[fqdn] = device
             self._roles[device.role].append(device)
             self._sites[device.site].append(device)
