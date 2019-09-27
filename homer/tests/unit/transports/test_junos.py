@@ -10,6 +10,7 @@ from homer.exceptions import HomerError
 from homer.transports import junos
 
 
+COMMIT_MESSAGE = 'commit message'
 ERROR_RESPONSE = """
     <rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"
                xmlns:junos="http://xml.juniper.net/junos/16.1I0/junos"
@@ -61,10 +62,10 @@ class TestConnectedDevice:
         device = junos.ConnectedDevice(self.fqdn)
         callback = mock.Mock()
 
-        device.commit('config', callback)
+        device.commit('config', COMMIT_MESSAGE, callback)
 
-        callback.assert_called_once_with('diff')
-        mocked_junos_device.return_value.cu.commit.assert_called_once_with()
+        callback.assert_called_once_with('device1.example.com', 'diff')
+        mocked_junos_device.return_value.cu.commit.assert_called_once_with(confirm=2, comment=COMMIT_MESSAGE)
 
     def test_commit_prepare_failed(self, mocked_junos_device):
         """It should raise HomerError if unable to prepare the commit."""
@@ -73,7 +74,7 @@ class TestConnectedDevice:
         device = junos.ConnectedDevice(self.fqdn)
         callback = mock.Mock()
         with pytest.raises(HomerError, match='Failed to prepare commit on'):
-            device.commit('config', callback)
+            device.commit('config', COMMIT_MESSAGE, callback)
 
         callback.assert_not_called()
         mocked_junos_device.return_value.cu.commit.assert_not_called()
@@ -89,10 +90,10 @@ class TestConnectedDevice:
 
         with pytest.raises(
                 HomerError, match='Failed to commit configuration on {fqdn}: Error Message'.format(fqdn=self.fqdn)):
-            device.commit('config', callback)
+            device.commit('config', COMMIT_MESSAGE, callback)
 
-        callback.assert_called_once_with('diff')
-        mocked_junos_device.return_value.cu.commit.assert_called_once_with()
+        callback.assert_called_once_with('device1.example.com', 'diff')
+        mocked_junos_device.return_value.cu.commit.assert_called_once_with(confirm=2, comment=COMMIT_MESSAGE)
 
     def test_commit_commit_error_unknown(self, mocked_junos_device):
         """On CommitError it should raise HomerError with the CommitError message if unable to parse it."""
@@ -105,10 +106,10 @@ class TestConnectedDevice:
 
         with pytest.raises(
                 HomerError, match='Failed to commit configuration on {fqdn}: CommitError'.format(fqdn=self.fqdn)):
-            device.commit('config', callback)
+            device.commit('config', COMMIT_MESSAGE, callback)
 
-        callback.assert_called_once_with('diff')
-        mocked_junos_device.return_value.cu.commit.assert_called_once_with()
+        callback.assert_called_once_with('device1.example.com', 'diff')
+        mocked_junos_device.return_value.cu.commit.assert_called_once_with(confirm=2, comment=COMMIT_MESSAGE)
 
     def test_commit_generic_error(self, mocked_junos_device):
         """On any other exception it should raise HomerError."""
@@ -119,10 +120,10 @@ class TestConnectedDevice:
         callback = mock.Mock()
 
         with pytest.raises(HomerError, match=r'Failed to commit configuration on {fqdn}$'.format(fqdn=self.fqdn)):
-            device.commit('config', callback)
+            device.commit('config', COMMIT_MESSAGE, callback)
 
-        callback.assert_called_once_with('diff')
-        mocked_junos_device.return_value.cu.commit.assert_called_once_with()
+        callback.assert_called_once_with('device1.example.com', 'diff')
+        mocked_junos_device.return_value.cu.commit.assert_called_once_with(confirm=2, comment=COMMIT_MESSAGE)
 
     def test_commit_check_ok(self, mocked_junos_device):
         """It should commit check the new config and clean rollback the staged one."""

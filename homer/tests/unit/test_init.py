@@ -103,3 +103,15 @@ class TestHomer:
         ret = self.homer.diff('device*')
         assert ret == 0
         assert mocked_device.called
+
+    @mock.patch('builtins.input')
+    @mock.patch('homer.sys.stdout.isatty')
+    @mock.patch('homer.transports.junos.JunOSDevice')
+    def test_execute_commit_ok(self, mocked_device, mocked_isatty, mocked_input):
+        """It should commit the compiled configuration to the device."""
+        # TODO: to be expanded
+        mocked_isatty.return_value = True
+        mocked_input.return_value = 'yes'
+        ret = self.homer.commit('device*', message='commit message')
+        assert ret == 0
+        assert mocked_device.called

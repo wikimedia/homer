@@ -50,11 +50,12 @@ class ConnectedDevice:
         self._device.open()
         self._device.bind(cu=Config)
 
-    def commit(self, config: str, callback: Callable) -> None:
+    def commit(self, config: str, message: str, callback: Callable) -> None:
         """Commit the loaded configuration.
 
         Arguments:
             config (str): the device new configuration.
+            message (str): the commit message to use.
             callback (callable): a callable function that accepts two parameters: a string with the FQDN of the
                 current device and a string with the diff between the current configuration and the new one. The
                 callback must raise any exception if the execution should be interrupted and the config rollbacked or
@@ -66,14 +67,18 @@ class ConnectedDevice:
         """
         try:
             diff = self._prepare(config)
-            callback(diff)
+            if diff is None:
+                logger.info('Empty diff for %s, skipping.', self._fqdn)
+                return
+            callback(self._fqdn, diff)
         except Exception as e:  # pylint: disable=broad-except
             self._rollback()
             raise HomerError('Failed to prepare commit on {fqdn}'.format(fqdn=self._fqdn)) from e
 
         logger.info('Committing the configuration on %s', self._fqdn)
         try:
-            self._device.cu.commit()
+            self._device.cu.commit(confirm=2, comment=message)
+            self._device.cu.commit_check()
         except CommitError as e:
             raise HomerError('Failed to commit configuration on {fqdn}: {reason}'.format(
                 fqdn=self._fqdn, reason=ConnectedDevice._parse_commit_error(e))) from e

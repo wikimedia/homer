@@ -13,6 +13,9 @@ whitelist_tests = Whitelist()
 whitelist_tests.unit.test_devices.TestDevices.setup_method
 whitelist_tests.unit.test_devices.TestDevices.setup_method_fixture
 
+whitelist_cli = Whitelist()
+whitelist_cli.argument_parser.subparsers.required
+
 # Needed for vulture < 0.27
 whitelist_mock = Whitelist()
 whitelist_mock.return_value

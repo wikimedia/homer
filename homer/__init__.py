@@ -2,6 +2,7 @@
 import logging
 import os
 import pathlib
+import sys
 
 from collections import defaultdict
 from typing import Callable, DefaultDict, Dict, List, Tuple
@@ -87,6 +88,21 @@ class Homer:
 
         return Homer._parse_results(successes)
 
+    def commit(self, query: str, *, message: str = '-') -> int:
+        """Commit the generated configuration asking for confirmation.
+
+        Arguments:
+            query (str): the query to select the devices.
+            message (str): the commit message to use.
+
+        Return:
+            int: ``0`` on success, a small positive integer on failure.
+
+        """
+        logger.info('Committing config for query %s with message: %s', query, message)
+        successes, _ = self._execute(self._device_commit, query, message=message)
+        return Homer._parse_results(successes)
+
     def _device_generate(self, device: Device, device_config: str) -> Tuple[bool, str]:
         """Save the generated configuration in a local file.
 
@@ -121,6 +137,48 @@ class Homer:
         with connected_device(device.fqdn) as connection:
             return connection.commit_check(device_config)
 
+    def _device_commit(self, device: Device, device_config: str, *,  # pylint: disable=no-self-use
+                       message: str = '-') -> Tuple[bool, str]:
+        """Commit a new configuration to the device.
+
+        Arguments:
+            device (homer.devices.Device): the device instance.
+            device_config (str): the generated configuration for the device.
+            message (str): the commit message to use.
+
+        Returns:
+            tuple: a two-element tuple with a boolean as first parameter that represent the success of the operation
+            or not and a second element with a string that contains the configuration differences.
+
+        """
+        def callback(fqdn: str, diff: str) -> None:
+            """Callback as required by :py:class:`homer.transports.junos.ConnectedDevice.commit`."""
+            if not sys.stdout.isatty():
+                raise HomerError('Not in a TTY, unable to ask for confirmation')
+
+            print('Configuration diff for {fqdn}:\n{diff}'.format(fqdn=fqdn, diff=diff))
+            print('Type "yes" to commit, "no" to abort.')
+
+            for _ in range(2):
+                resp = input('> ')
+                if resp == 'yes':
+                    break
+                elif resp == 'no':
+                    raise HomerError('Commit aborted')
+                else:
+                    print(('Invalid response, please type "yes" to commit or "no" to abort. After 2 wrong answers the '
+                           'commit will be aborted.'))
+            else:
+                raise HomerError('Too many invalid answers, commit aborted')
+
+        with connected_device(device.fqdn) as connection:
+            try:
+                connection.commit(device_config, message, callback)
+                return True, ''
+            except HomerError:
+                logger.exception('Failed to commit on %s', device.fqdn)
+                return False, ''
+
     def _prepare_out_dir(self) -> None:
         """Prepare the out directory creating the directory if doesn't exists and deleting any pre-generated file."""
         self._output_base_path.mkdir(parents=True, exist_ok=True)
@@ -128,12 +186,13 @@ class Homer:
             if path.is_file() and path.suffix == Homer.OUT_EXTENSION:
                 path.unlink()
 
-    def _execute(self, callback: Callable, query: str) -> Tuple[Dict, DefaultDict]:
+    def _execute(self, callback: Callable, query: str, **kwargs: str) -> Tuple[Dict, DefaultDict]:
         """Execute Homer based on the given action and query.
 
         Arguments:
             callback (Callable): the callback to call for each device.
             query (str): the query to filter the devices to act on.
+            **kwargs (str): any additional keyword argument to pass to the callback
 
         Returns:
             tuple: a two-element tuple, with the first item as a dictionary that contains two keys (:py:data:`True`
@@ -154,7 +213,7 @@ class Homer:
                 successes[False].append(device.fqdn)
                 continue
 
-            device_success, device_diff = callback(device, device_config)
+            device_success, device_diff = callback(device, device_config, **kwargs)
             successes[device_success].append(device.fqdn)
             diffs[device_diff].append(device.fqdn)
 

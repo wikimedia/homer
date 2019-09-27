@@ -24,11 +24,16 @@ def argument_parser() -> argparse.ArgumentParser:
     group.add_argument('-q', '--quiet', action='store_const', const=logging.WARN, dest='loglevel',
                        help='Silent mode, only log warnings',)
     parser.add_argument('-c', '--config', default='/etc/homer/config.yaml', help='Main configuration file to load.')
-    parser.add_argument('action', choices=('generate', 'diff'),
-                        help=('Select which action to perform. Use generate to just generate the configurations '
-                              'locally, diff to perform a commit check on the target devices and commit to apply the '
-                              'configuration to the target devices.'))
     parser.add_argument('query', help='Select which devices to target')
+
+    subparsers = parser.add_subparsers(help='Action to perform: generate, diff, commit', dest='action')
+    subparsers.required = True
+
+    subparsers.add_parser('generate', help='Generate the configurations locally.')
+    subparsers.add_parser('diff', help=('Perform a commit check and show the differences between the generated '
+                                        'configuration and the live one.'))
+    commit = subparsers.add_parser('commit', help='Actually commit the generated configuration to the devices.')
+    commit.add_argument('message', help='A mandatory commit message. The running username will be automatically added.')
 
     return parser
 
@@ -47,9 +52,14 @@ def main(argv: Optional[list] = None) -> int:
     logging.basicConfig(level=args.loglevel)
     if args.loglevel != logging.DEBUG:  # Suppress noisy loggers
         logging.getLogger('ncclient').setLevel(logging.WARNING)
+
+    kwargs = {}
+    if args.action == 'commit':
+        kwargs['message'] = args.message
+
     config = load_yaml_config(args.config)
     runner = Homer(config)
-    return getattr(runner, args.action)(args.query)
+    return getattr(runner, args.action)(args.query, **kwargs)
 
 
 if __name__ == '__main__':

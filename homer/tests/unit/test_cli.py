@@ -23,4 +23,4 @@ def test_main(tmp_path):
     with open(str(config_path), 'w') as f:
         yaml.dump(config, f)
 
-    assert cli.main(['-c', str(config_path), 'generate', 'device1.example.com']) == 0
+    assert cli.main(['-c', str(config_path), 'device1.example.com', 'generate']) == 0
