@@ -5,7 +5,7 @@ import sys
 
 from typing import Optional
 
-from homer import ACTIONS, execute
+from homer import Homer
 from homer.config import load_yaml_config
 
 
@@ -24,7 +24,7 @@ def argument_parser() -> argparse.ArgumentParser:
     group.add_argument('-q', '--quiet', action='store_const', const=logging.WARN, dest='loglevel',
                        help='Silent mode, only log warnings',)
     parser.add_argument('-c', '--config', default='/etc/homer/config.yaml', help='Main configuration file to load.')
-    parser.add_argument('action', choices=ACTIONS,
+    parser.add_argument('action', choices=('generate', 'diff'),
                         help=('Select which action to perform. Use generate to just generate the configurations '
                               'locally, diff to perform a commit check on the target devices and commit to apply the '
                               'configuration to the target devices.'))
@@ -48,8 +48,8 @@ def main(argv: Optional[list] = None) -> int:
     if args.loglevel != logging.DEBUG:  # Suppress noisy loggers
         logging.getLogger('ncclient').setLevel(logging.WARNING)
     config = load_yaml_config(args.config)
-
-    return execute(config, args.action, args.query)
+    runner = Homer(config)
+    return getattr(runner, args.action)(args.query)
 
 
 if __name__ == '__main__':
