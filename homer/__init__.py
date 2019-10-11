@@ -7,11 +7,14 @@ import sys
 from collections import defaultdict
 from typing import Callable, DefaultDict, Dict, List, Tuple
 
+import pynetbox
+
 from pkg_resources import DistributionNotFound, get_distribution
 
 from homer.config import HierarchicalConfig, load_yaml_config
 from homer.devices import Device, Devices
 from homer.exceptions import HomerError
+from homer.netbox import NetboxData
 from homer.templates import Renderer
 from homer.transports.junos import connected_device
 
@@ -40,17 +43,23 @@ class Homer:
         """
         logger.debug('Initialized with configuration: %s', main_config)
         self._main_config = main_config
-        self._private_base_path = self._main_config['base_paths'].get('private', '')
+        private_base_path = self._main_config['base_paths'].get('private', '')
         self._config = HierarchicalConfig(
-            self._main_config['base_paths']['public'], private_base_path=self._private_base_path)
-        self._devices_config = load_yaml_config(
-            os.path.join(self._main_config['base_paths']['public'], 'config', 'devices.yaml'))
-        self._private_devices_config = {}  # type: dict
-        if self._private_base_path:
-            self._private_devices_config = load_yaml_config(
-                os.path.join(self._private_base_path, 'config', 'devices.yaml'))
+            self._main_config['base_paths']['public'], private_base_path=private_base_path)
 
-        self._devices = Devices(self._devices_config, self._private_devices_config)
+        devices_config = load_yaml_config(
+            os.path.join(self._main_config['base_paths']['public'], 'config', 'devices.yaml'))
+        private_devices_config = {}  # type: dict
+        if private_base_path:
+            private_devices_config = load_yaml_config(
+                os.path.join(private_base_path, 'config', 'devices.yaml'))
+
+        self._netbox_api = None
+        if self._main_config.get('netbox', None) is not None:
+            self._netbox_api = pynetbox.api(
+                self._main_config['netbox']['url'], token=self._main_config['netbox']['token'])
+
+        self._devices = Devices(devices_config, private_devices_config)
         self._renderer = Renderer(self._main_config['base_paths']['public'])
         self._output_base_path = pathlib.Path(self._main_config['base_paths']['output'])
 
@@ -207,7 +216,10 @@ class Homer:
             logger.info('Generating configuration for %s', device.fqdn)
 
             try:
-                device_config = self._renderer.render(device.role, self._config.get(device))
+                device_data = self._config.get(device)
+                if self._netbox_api is not None:
+                    device_data['netbox'] = NetboxData(self._netbox_api, device)
+                device_config = self._renderer.render(device.role, device_data)
             except HomerError:
                 logger.exception('Device %s failed to render the template, skipping.', device.fqdn)
                 successes[False].append(device.fqdn)

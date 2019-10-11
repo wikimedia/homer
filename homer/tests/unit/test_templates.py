@@ -27,3 +27,5 @@ class TestRenderer:
         """Should raise HomerError if the template cannot be parsed."""
         with pytest.raises(HomerError, match='Could not render template non_existent.conf'):
             self.renderer.render('non_existent', {})
+        with pytest.raises(HomerError, match='Could not render template key_error.conf'):
+            self.renderer.render('key_error', {})

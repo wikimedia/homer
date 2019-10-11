@@ -10,6 +10,7 @@ with open('README.rst', 'r') as readme:
 INSTALL_REQUIRES = [
     'Jinja2>=2.10',
     'junos-eznc>=2.2.1,<3',
+    'pynetbox>=4.0.6',
     'pyyaml>=3.11',
 ]
 

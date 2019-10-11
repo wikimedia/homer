@@ -41,7 +41,7 @@ class TestHomer:
         return [out_file.name for out_file in self.output.iterdir()
                 if out_file.is_file() and out_file.suffix == Homer.OUT_EXTENSION]
 
-    def test_execute_generate_ok(self):
+    def test_generate_ok(self):
         """It should generate the compiled configuration files for the matching devices."""
         spurious_file = self.output / 'spurious{suffix}'.format(suffix=Homer.OUT_EXTENSION)
         spurious_file.touch()  # To check that the file will be removed
@@ -68,7 +68,7 @@ class TestHomer:
         with open(str(self.output / 'device2.example.com.out')) as f:
             assert textwrap.dedent(expected).lstrip('\n') == f.read()
 
-    def test_execute_no_private(self):
+    def test_generate_no_private(self):
         """It should execute the whole program based on CLI arguments."""
         config = self.config.copy()
         del config['base_paths']['private']
@@ -85,6 +85,34 @@ class TestHomer:
             roleB_value;
             siteB_value;
             device2_value;
+        """
+        with open(str(self.output / 'device2.example.com.out')) as f:
+            assert textwrap.dedent(expected).lstrip('\n') == f.read()
+
+    @mock.patch('homer.NetboxData', autospec=True)
+    def test_execute_generate_netbox(self, mocked_netbox_data):
+        """It should execute the whole program based on CLI arguments."""
+        config = self.config.copy()
+        config['netbox'] = {'url': 'netbox.example.com', 'token': 'token'}
+        mocked_netbox_data.return_value = {'netbox_key': 'netbox_value'}
+
+        ret = Homer(config).generate('device*')
+
+        assert ret == 0
+        assert sorted(self.get_generated_files()) == ['device1.example.com.out', 'device2.example.com.out']
+        expected = """
+            roleB;
+            siteB;
+            device2.example.com;
+            common_value;
+            roleB_value;
+            siteB_value;
+            device2_value;
+            common_private_value;
+            roleB_private_value;
+            siteB_private_value;
+            device2_private_value;
+            netbox_value;
         """
         with open(str(self.output / 'device2.example.com.out')) as f:
             assert textwrap.dedent(expected).lstrip('\n') == f.read()
