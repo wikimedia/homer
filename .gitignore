@@ -1,4 +1,6 @@
 /build/
+/env/
+/output/
 /.cache/
 /.coverage
 /.eggs/
@@ -10,3 +12,4 @@
 /*.egg-info/
 __pycache__/
 *.pyc
+config.yaml
