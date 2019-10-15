@@ -233,7 +233,7 @@ class Homer:
 
     @staticmethod
     def _parse_results(successes: Dict[bool, List[Device]]) -> int:
-        """.
+        """Parse the results dictionary, log and return the approriate exit status code.
 
         Arguments:
             successes (dict): a dictionary that contains two keys (:py:data:`True` and :py:data:`False`) and as value
