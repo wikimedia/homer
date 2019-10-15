@@ -16,4 +16,5 @@ Homer Python API autodoc.
    homer.devices
    homer.exceptions
    homer.netbox
+   homer.templates
    homer.transports
