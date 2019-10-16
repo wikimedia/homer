@@ -5,7 +5,7 @@ import pathlib
 import sys
 
 from collections import defaultdict
-from typing import Callable, DefaultDict, Dict, List, Tuple
+from typing import Callable, DefaultDict, Dict, List, Mapping, Tuple
 
 import pynetbox
 
@@ -34,7 +34,7 @@ class Homer:
     OUT_EXTENSION = '.out'
     """:py:class:`str`: the extension for the generated output files."""
 
-    def __init__(self, main_config: Dict):
+    def __init__(self, main_config: Mapping):
         """Initialize the instance.
 
         Arguments:
@@ -232,7 +232,7 @@ class Homer:
         return successes, diffs
 
     @staticmethod
-    def _parse_results(successes: Dict[bool, List[Device]]) -> int:
+    def _parse_results(successes: Mapping[bool, List[Device]]) -> int:
         """Parse the results dictionary, log and return the approriate exit status code.
 
         Arguments:

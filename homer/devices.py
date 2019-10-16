@@ -3,12 +3,12 @@ import fnmatch
 import logging
 
 from collections import defaultdict, UserDict
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, List, Mapping, NamedTuple, Optional
 
 from homer.exceptions import HomerError
 
 
-Device = NamedTuple('Device', [('fqdn', str), ('role', str), ('site', str), ('config', Dict), ('private', Dict)])
+Device = NamedTuple('Device', [('fqdn', str), ('role', str), ('site', str), ('config', Mapping), ('private', Mapping)])
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
@@ -18,7 +18,7 @@ class Devices(UserDict):  # pylint: disable=too-many-ancestors
     role_prefix = 'role'
     site_prefix = 'site'
 
-    def __init__(self, devices: Dict[str, Dict[Any, Any]], private_config: Optional[Dict[str, Any]] = None):
+    def __init__(self, devices: Mapping[str, Mapping[Any, Any]], private_config: Optional[Mapping[str, Any]] = None):
         """Initialize the instance.
 
         Arguments:

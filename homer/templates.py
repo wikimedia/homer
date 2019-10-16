@@ -2,7 +2,7 @@
 import logging
 import os
 
-from typing import Dict
+from typing import Mapping
 
 import jinja2
 
@@ -30,7 +30,7 @@ class Renderer:
             lstrip_blocks=True,
             cache_size=0)
 
-    def render(self, template_name: str, data: Dict) -> str:
+    def render(self, template_name: str, data: Mapping) -> str:
         """Render a template with the given data.
 
         Arguments:
