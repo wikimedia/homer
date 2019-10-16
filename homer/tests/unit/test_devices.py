@@ -15,7 +15,7 @@ class TestDevices:
     def setup_method(self):
         """Initialize the test instances."""
         # pylint: disable=attribute-defined-outside-init
-        self.devices = Devices(load_yaml_config(get_fixture_path('public', 'config', 'devices.yaml')), {})
+        self.devices = Devices(load_yaml_config(get_fixture_path('public', 'config', 'devices.yaml')))
         self.devices_with_private = Devices(
             load_yaml_config(get_fixture_path('public', 'config', 'devices.yaml')),
             load_yaml_config(get_fixture_path('private', 'config', 'devices.yaml')))
