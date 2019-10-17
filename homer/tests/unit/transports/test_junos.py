@@ -67,6 +67,18 @@ class TestConnectedDevice:
         callback.assert_called_once_with('device1.example.com', 'diff')
         mocked_junos_device.return_value.cu.commit.assert_called_once_with(confirm=2, comment=COMMIT_MESSAGE)
 
+    def test_commit_empty_diff(self, mocked_junos_device):
+        """It should skip the commit on empty diff."""
+        mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
+        mocked_junos_device.return_value.cu.diff.return_value = None
+        device = junos.ConnectedDevice(self.fqdn)
+        callback = mock.Mock()
+
+        device.commit('config', COMMIT_MESSAGE, callback)
+
+        callback.assert_not_called()
+        mocked_junos_device.return_value.cu.commit.assert_not_called()
+
     def test_commit_prepare_failed(self, mocked_junos_device):
         """It should raise HomerError if unable to prepare the commit."""
         mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
