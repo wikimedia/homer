@@ -14,7 +14,7 @@ from pkg_resources import DistributionNotFound, get_distribution
 from homer.config import HierarchicalConfig, load_yaml_config
 from homer.devices import Device, Devices
 from homer.exceptions import HomerError
-from homer.netbox import NetboxData
+from homer.netbox import NetboxData, NetboxInventory
 from homer.templates import Renderer
 from homer.transports.junos import connected_device
 
@@ -47,20 +47,28 @@ class Homer:
         self._config = HierarchicalConfig(
             self._main_config['base_paths']['public'], private_base_path=private_base_path)
 
-        devices = load_yaml_config(
+        self._netbox_api = None
+        if self._main_config.get('netbox', {}):
+            self._netbox_api = pynetbox.api(
+                self._main_config['netbox']['url'], token=self._main_config['netbox']['token'])
+
+        devices_all_config = load_yaml_config(
             os.path.join(self._main_config['base_paths']['public'], 'config', 'devices.yaml'))
-        devices_config = {fqdn: data.get('config', {}) for fqdn, data in devices.items()}
-        for data in devices.values():
-            data.pop('config', None)
+        devices_config = {fqdn: data.get('config', {}) for fqdn, data in devices_all_config.items()}
+
+        netbox_inventory = self._main_config.get('netbox', {}).get('inventory', {})
+        if netbox_inventory:
+            devices = NetboxInventory(
+                self._netbox_api, netbox_inventory['device_roles'], netbox_inventory['device_statuses']).get_devices()
+        else:
+            devices = devices_all_config.copy()
+            for data in devices.values():
+                data.pop('config', None)
+
         private_devices_config = {}  # type: dict
         if private_base_path:
             private_devices_config = load_yaml_config(
                 os.path.join(private_base_path, 'config', 'devices.yaml'))
-
-        self._netbox_api = None
-        if self._main_config.get('netbox', None) is not None:
-            self._netbox_api = pynetbox.api(
-                self._main_config['netbox']['url'], token=self._main_config['netbox']['token'])
 
         self._devices = Devices(devices, devices_config, private_devices_config)
         self._renderer = Renderer(self._main_config['base_paths']['public'])

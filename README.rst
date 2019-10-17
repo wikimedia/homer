@@ -5,4 +5,7 @@ Homer allows to manage the lifecycle of the configuration for network devices, g
 configuration.
 The configuration generation is based on ``YAML`` files to define variables and ``Jinja2`` templates.
 The ``YAML`` files allow for hierarchical override of variables based on the device role, site or hostname.
-Once generated, the configuration can also be deployed to their devices.
+Once generated, the configuration can be deployed to the selected devices.
+The device list can either live hardcoded in the configuration files or be dynamically gathered from Netbox.
+When using Netbox as inventory both the Virtual Chassis endpoint and the Device endpoint are used to select
+all the devices that matches the configured whitelist of device roles and statuses.

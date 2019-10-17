@@ -12,3 +12,16 @@ netbox:
     url: https://netbox.example.com:443
     # Netbox token
     token: token_value
+    # Inventory parmeters. [optional]
+    # If defined the list of devices will be gathered from Netbox, not from the config file. In this case the
+    # configuration file is used only to populate the device configuration data to be used when computing the generated
+    # configuration for the device.
+    inventory:
+        # Device roles to include in the selection. Values must match Netbox's slug values.
+        device_roles:
+            - roleA
+            - roleB
+        # Device statuses to include in the selection. Values must match Netbox's statuses.
+        device_statuses:
+            - Active
+            - Staged
