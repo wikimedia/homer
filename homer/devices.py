@@ -3,7 +3,7 @@ import fnmatch
 import logging
 
 from collections import defaultdict, UserDict
-from typing import Any, List, Mapping, NamedTuple, Optional
+from typing import List, Mapping, NamedTuple, Optional
 
 from homer.exceptions import HomerError
 
@@ -18,7 +18,8 @@ class Devices(UserDict):  # pylint: disable=too-many-ancestors
     role_prefix = 'role'
     site_prefix = 'site'
 
-    def __init__(self, devices: Mapping[str, Mapping[Any, Any]], private_config: Optional[Mapping[str, Any]] = None):
+    def __init__(self, devices: Mapping[str, Mapping[str, str]], devices_config: Mapping[str, Mapping],
+                 private_config: Optional[Mapping[str, Mapping]] = None):
         """Initialize the instance.
 
         Arguments:
@@ -36,7 +37,8 @@ class Devices(UserDict):  # pylint: disable=too-many-ancestors
         self._sites = defaultdict(list)  # type: defaultdict
 
         for fqdn, data in devices.items():
-            device = Device(fqdn, data['role'], data['site'], data.get('config', {}), private_config.get(fqdn, {}))
+            device = Device(fqdn, data['role'], data['site'], devices_config.get(fqdn, {}),
+                            private_config.get(fqdn, {}))
             self.data[fqdn] = device
             self._roles[device.role].append(device)
             self._sites[device.site].append(device)

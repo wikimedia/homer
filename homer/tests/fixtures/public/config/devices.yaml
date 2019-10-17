@@ -25,5 +25,3 @@ invalid.example.com:
 valid.example.com:
   role: roleC
   site: siteC
-  config:
-    device_key: valid_value

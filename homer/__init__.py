@@ -47,8 +47,11 @@ class Homer:
         self._config = HierarchicalConfig(
             self._main_config['base_paths']['public'], private_base_path=private_base_path)
 
-        devices_config = load_yaml_config(
+        devices = load_yaml_config(
             os.path.join(self._main_config['base_paths']['public'], 'config', 'devices.yaml'))
+        devices_config = {fqdn: data.get('config', {}) for fqdn, data in devices.items()}
+        for data in devices.values():
+            data.pop('config', None)
         private_devices_config = {}  # type: dict
         if private_base_path:
             private_devices_config = load_yaml_config(
@@ -59,7 +62,7 @@ class Homer:
             self._netbox_api = pynetbox.api(
                 self._main_config['netbox']['url'], token=self._main_config['netbox']['token'])
 
-        self._devices = Devices(devices_config, private_devices_config)
+        self._devices = Devices(devices, devices_config, private_devices_config)
         self._renderer = Renderer(self._main_config['base_paths']['public'])
         self._output_base_path = pathlib.Path(self._main_config['base_paths']['output'])
 
