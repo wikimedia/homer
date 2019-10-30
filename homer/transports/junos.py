@@ -2,7 +2,7 @@
 import logging
 
 from contextlib import contextmanager
-from typing import Callable, Iterator, Tuple
+from typing import Callable, Iterator, List, Tuple, Union
 
 from jnpr.junos import Device as JunOSDevice
 from jnpr.junos.exception import CommitError, UnlockError
@@ -50,7 +50,8 @@ class ConnectedDevice:
         self._device.open()
         self._device.bind(cu=Config)
 
-    def commit(self, config: str, message: str, callback: Callable) -> None:
+    def commit(self, config: str, message: str, callback: Callable,
+               ignore_warning: Union[bool, str, List[str]] = False) -> None:
         """Commit the loaded configuration.
 
         Arguments:
@@ -66,7 +67,7 @@ class ConnectedDevice:
 
         """
         try:
-            diff = self._prepare(config)
+            diff = self._prepare(config, ignore_warning)
             if diff is None:
                 logger.info('Empty diff for %s, skipping.', self._fqdn)
                 return
@@ -85,7 +86,7 @@ class ConnectedDevice:
         except Exception as e:
             raise HomerError('Failed to commit configuration on {fqdn}'.format(fqdn=self._fqdn)) from e
 
-    def commit_check(self, config: str) -> Tuple[bool, str]:
+    def commit_check(self, config: str, ignore_warning: Union[bool, str, List[str]] = False) -> Tuple[bool, str]:
         """Perform commit check, reuturn the diff and rollback.
 
         Arguments:
@@ -100,7 +101,7 @@ class ConnectedDevice:
         success = False
         diff = ''
         try:
-            diff = self._prepare(config)
+            diff = self._prepare(config, ignore_warning)
             logger.info('Running commit check on %s', self._fqdn)
             self._device.cu.commit_check()
             success = True
@@ -123,7 +124,7 @@ class ConnectedDevice:
             pass
         self._device.close()
 
-    def _prepare(self, config: str) -> str:
+    def _prepare(self, config: str, ignore_warning: Union[bool, str, List[str]] = False) -> str:
         """Prepare the new configuration to be committed.
 
         Arguments:
@@ -135,7 +136,7 @@ class ConnectedDevice:
         """
         logger.debug('Preparing the configuration on %s', self._fqdn)
         self._device.cu.lock()
-        self._device.cu.load(config, format='text', merge=False)
+        self._device.cu.load(config, format='text', merge=False, ignore_warning=ignore_warning)
         return self._device.cu.diff()
 
     def _rollback(self) -> None:

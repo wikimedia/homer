@@ -70,6 +70,7 @@ class Homer:
             private_devices_config = load_yaml_config(
                 os.path.join(private_base_path, 'config', 'devices.yaml'))
 
+        self._ignore_warning = self._main_config.get('transports', {}).get('junos', {}).get('ignore_warning', False)
         self._devices = Devices(devices, devices_config, private_devices_config)
         self._renderer = Renderer(self._main_config['base_paths']['public'])
         self._output_base_path = pathlib.Path(self._main_config['base_paths']['output'])
@@ -155,7 +156,7 @@ class Homer:
 
         """
         with connected_device(device.fqdn) as connection:
-            return connection.commit_check(device_config)
+            return connection.commit_check(device_config, self._ignore_warning)
 
     def _device_commit(self, device: Device, device_config: str, *,  # pylint: disable=no-self-use
                        message: str = '-') -> Tuple[bool, str]:
@@ -193,7 +194,7 @@ class Homer:
 
         with connected_device(device.fqdn) as connection:
             try:
-                connection.commit(device_config, message, callback)
+                connection.commit(device_config, message, callback, self._ignore_warning)
                 return True, ''
             except HomerError:
                 logger.exception('Failed to commit on %s', device.fqdn)

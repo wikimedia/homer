@@ -25,3 +25,10 @@ netbox:
         device_statuses:
             - Active
             - Staged
+
+transports:
+  junos:
+    ignore_warning:
+      - statement must contain additional statements
+      - statement has no contents
+# See https://junos-pyez.readthedocs.io/en/2.3.0/jnpr.junos.utils.html#jnpr.junos.utils.config.Config.load
