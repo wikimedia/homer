@@ -42,7 +42,9 @@ class NetboxData(UserDict):  # pylint: disable=too-many-ancestors
         if not hasattr(self, method_name):
             raise KeyError(key)
 
-        return getattr(self, method_name)()
+        if key not in self.data:
+            self.data[key] = getattr(self, method_name)()
+        return self.data[key]
 
 
 class NetboxInventory:
