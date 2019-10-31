@@ -46,7 +46,7 @@ class TestNetboxData:
         """Initialize the test instances."""
         # pylint: disable=attribute-defined-outside-init
         self.netbox_api = mock.MagicMock(specset=api)
-        self.device = Device('device1.example.com', 'role1', 'site1', {}, {})
+        self.device = Device('device1.example.com', {'role': 'role1', 'site': 'site1'}, {}, {})
         self.netbox_data = NetboxData(self.netbox_api, self.device)
 
     def test_init(self):

@@ -2,77 +2,39 @@
 import fnmatch
 import logging
 
-from collections import defaultdict, UserDict
+from collections import UserDict
 from typing import List, Mapping, NamedTuple, Optional
 
-from homer.exceptions import HomerError
 
-
-Device = NamedTuple('Device', [('fqdn', str), ('role', str), ('site', str), ('config', Mapping), ('private', Mapping)])
+Device = NamedTuple('Device', [('fqdn', str), ('metadata', Mapping), ('config', Mapping), ('private', Mapping)])
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
 class Devices(UserDict):  # pylint: disable=too-many-ancestors
     """Collection of devices, accessible by FQDN as a dict or role and site via dedicated accessors."""
 
-    role_prefix = 'role'
-    site_prefix = 'site'
-
     def __init__(self, devices: Mapping[str, Mapping[str, str]], devices_config: Mapping[str, Mapping],
                  private_config: Optional[Mapping[str, Mapping]] = None):
         """Initialize the instance.
 
         Arguments:
-            devices (dict): the devices configuration with FQDN as key and a dictionary with role, site and
-                device-specific configuration as value.
-            private_config (dict, optional): an optional devices private configuration with FQDN as key and a
-                dictionary of device-specific configuration as value. It cannot have top level keys in common with the
-                same device public configuration.
+            devices (dict): the devices configuration with FQDN as key and a dictionary with the device metadata as
+                value.
+            devices_config (dict): the devices configuration with FQDN as key and a dictionary with the device-specific
+                configuration as value.
+            private_config (dict, optional): an optional dictionary of the devices private configuration with the FQDN
+                as key and a dictionary of device-specific private configuration as value. It cannot have top level
+                keys in common with the same device public configuration.
 
         """
         super().__init__()
         if private_config is None:
             private_config = {}
-        self._roles = defaultdict(list)  # type: defaultdict
-        self._sites = defaultdict(list)  # type: defaultdict
 
-        for fqdn, data in devices.items():
-            device = Device(fqdn, data['role'], data['site'], devices_config.get(fqdn, {}),
-                            private_config.get(fqdn, {}))
-            self.data[fqdn] = device
-            self._roles[device.role].append(device)
-            self._sites[device.site].append(device)
+        for fqdn, metadata in devices.items():
+            self.data[fqdn] = Device(fqdn, metadata, devices_config.get(fqdn, {}), private_config.get(fqdn, {}))
 
-        logger.info('Initialized %d devices in %d role(s) and %d site(s)',
-                    len(self.data), len(self._roles), len(self._sites))
-
-    def role(self, name: str) -> List[Device]:
-        """Get all the devices with a specific role.
-
-        Arguments:
-            name (str): the role name to filter for.
-
-        Returns:
-            list: a list of Device objects.
-
-        """
-        if name in self._roles:  # Avoid to create empty objects in defaultdict
-            return self._roles[name]
-        return []
-
-    def site(self, name: str) -> List[Device]:
-        """Get all the devices within a specific site.
-
-        Arguments:
-            name (str): the site name to filter for.
-
-        Returns:
-            list: a list of Device objects.
-
-        """
-        if name in self._sites:  # Avoid to create empty objects in defaultdict
-            return self._sites[name]
-        return []
+        logger.info('Initialized %d devices', len(self.data))
 
     def query(self, query_string: str) -> List[Device]:
         """Get the devices matching the query.
@@ -90,11 +52,9 @@ class Devices(UserDict):  # pylint: disable=too-many-ancestors
             list: a list of Device objects.
 
         """
-        if ':' in query_string:  # Role or site query
-            prefix, query = query_string.split(':', 1)
-            if prefix not in (self.role_prefix, self.site_prefix):
-                raise HomerError('Unknown query prefix: {prefix}'.format(prefix=prefix))
-            results = getattr(self, prefix)(query)
+        if ':' in query_string:  # Simple key-value query
+            key, value = query_string.split(':', 1)
+            results = [device for device in self.data.values() if device.metadata.get(key, None) == value]
         else:  # FQDN query
             results = [device for fqdn, device in self.items() if fnmatch.fnmatch(fqdn, query_string)]
 

@@ -230,7 +230,7 @@ class Homer:
                 device_data = self._config.get(device)
                 if self._netbox_api is not None:
                     device_data['netbox'] = NetboxData(self._netbox_api, device)
-                device_config = self._renderer.render(device.role, device_data)
+                device_config = self._renderer.render(device.metadata['role'], device_data)
             except HomerError:
                 logger.exception('Device %s failed to render the template, skipping.', device.fqdn)
                 successes[False].append(device.fqdn)

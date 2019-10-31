@@ -82,17 +82,19 @@ class HierarchicalConfig:
             ``common``, ``role``, ``site``, ``device``. Public and private configuration are merged together.
 
         """
+        role = device.metadata.get('role', '')
+        site = device.metadata.get('site', '')
         public = {
             **self._configs['public_common'],
-            **self._configs['public_roles'].get(device.role, {}),
-            **self._configs['public_sites'].get(device.site, {}),
+            **self._configs['public_roles'].get(role, {}),
+            **self._configs['public_sites'].get(site, {}),
             **device.config,
-            **{'role': device.role, 'site': device.site, 'hostname': device.fqdn},  # Inject also role, site and fqdn
+            **{'metadata': device.metadata, 'hostname': device.fqdn},  # Inject also FQDN and device metadata
         }
         private = {
             **self._configs['private_common'],
-            **self._configs['private_roles'].get(device.role, {}),
-            **self._configs['private_sites'].get(device.site, {}),
+            **self._configs['private_roles'].get(role, {}),
+            **self._configs['private_sites'].get(site, {}),
             **device.private,
         }
         if public.keys() & private.keys():
