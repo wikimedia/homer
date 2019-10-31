@@ -1,4 +1,5 @@
 """Netbox module."""
+import ipaddress
 import logging
 
 from collections import UserDict
@@ -141,4 +142,19 @@ class NetboxInventory:
             dict: the dictionary with the device metadata.
 
         """
-        return {'role': device.device_role.slug, 'site': device.site.slug}
+        metadata = {
+            'role': device.device_role.slug,
+            'site': device.site.slug,
+            'type': device.device_type.slug,
+            # Inject the Netbox object too to be future-proof and allow to get additional metadata without
+            # the need of modifying homer's code. It also allow to use it inside NetboxData.
+            'netbox_object': device,
+        }
+
+        # Convert Netbox interfaces into IPs
+        if device.primary_ip4 is not None:
+            metadata['ip4'] = ipaddress.ip_interface(device.primary_ip4.address).ip.compressed
+        if device.primary_ip6 is not None:
+            metadata['ip6'] = ipaddress.ip_interface(device.primary_ip6.address).ip.compressed
+
+        return metadata

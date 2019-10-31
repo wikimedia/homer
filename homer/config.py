@@ -84,10 +84,11 @@ class HierarchicalConfig:
         """
         role = device.metadata.get('role', '')
         site = device.metadata.get('site', '')
+        # Deepcopying the common configurations to protect from any side effect
         public = {
-            **self._configs['public_common'],
-            **self._configs['public_roles'].get(role, {}),
-            **self._configs['public_sites'].get(site, {}),
+            **deepcopy(self._configs['public_common']),
+            **deepcopy(self._configs['public_roles'].get(role, {})),
+            **deepcopy(self._configs['public_sites'].get(site, {})),
             **device.config,
             **{'metadata': device.metadata, 'hostname': device.fqdn},  # Inject also FQDN and device metadata
         }
@@ -101,4 +102,4 @@ class HierarchicalConfig:
             raise HomerError('Configuration key(s) found in both public and private config: {keys}'.format(
                 keys=public.keys() & private.keys()))
 
-        return {**deepcopy(public), **deepcopy(private)}
+        return {**public, **deepcopy(private)}

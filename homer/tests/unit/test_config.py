@@ -55,3 +55,17 @@ def test_hierarchical_config_get_duplicate_keys():
     config = HierarchicalConfig(get_fixture_path('public'), private_base_path=get_fixture_path('private'))
     with pytest.raises(HomerError, match=r'Configuration key\(s\) found in both public and private config'):
         config.get(device)
+
+
+def test_uncopiable_object():
+    """It should return the configuration also if the device metadata has uncopiable objects."""
+    class Uncopiable:
+        """Uncopiable class."""
+
+        def __deepcopy__(self, _):
+            """Make the class uncopiable."""
+            raise TypeError('Uncopiable')
+
+    device = Device('device1.example.com', {'role': 'roleA', 'site': 'siteA', 'uncopiable': Uncopiable()}, {}, {})
+    config = HierarchicalConfig(get_fixture_path('public'), private_base_path=get_fixture_path('private'))
+    config.get(device)

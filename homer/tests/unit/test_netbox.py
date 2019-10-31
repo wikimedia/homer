@@ -17,16 +17,24 @@ def mock_netbox_device(name, role, site, status, ip4=False, ip6=False):
     device.device_role.slug = role
     device.site.slug = site
     device.status.value = status
+    device.device_type.slug = 'typeA'
 
     if ip4:
+        device.primary_ip4.address = '127.0.0.1/32'
         device.primary_ip4.dns_name = name
     else:
         device.primary_ip4 = None
 
     if ip6:
+        device.primary_ip6.address = '::1/128'
         device.primary_ip6.dns_name = name
     else:
         device.primary_ip6 = None
+
+    def _deepcopy(_):
+        raise TypeError('Mocked device does not support deepcopy')
+
+    device.__deepcopy__ = _deepcopy
 
     return device
 
@@ -93,4 +101,15 @@ class TestNetboxInventory:
     def test_get_devices(self):
         """It should get the devices without inspecting virtual chassis."""
         devices = self.inventory.get_devices()
-        assert devices == {d.name: {'site': d.site.slug, 'role': d.device_role.slug} for d in self.selected_devices}
+        expected = {}
+        for device in self.selected_devices:
+            expected_device = {'site': device.site.slug, 'role': device.device_role.slug, 'type': 'typeA',
+                               'netbox_object': device}
+            if device.primary_ip4 is not None:
+                expected_device['ip4'] = '127.0.0.1'
+            if device.primary_ip6 is not None:
+                expected_device['ip6'] = '::1'
+
+            expected[device.name] = expected_device
+
+        assert devices == expected
