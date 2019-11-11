@@ -18,7 +18,8 @@ whitelist_cli = Whitelist()
 whitelist_cli.argument_parser.subparsers.required
 
 whitelist_netbox = Whitelist()
-whitelist_netbox.NetboxData._get_virtual_chassis_members
+whitelist_netbox.NetboxData._get_vlans
+whitelist_netbox.NetboxDeviceData._get_virtual_chassis_members
 
 # Needed for vulture < 0.27
 whitelist_mock = Whitelist()

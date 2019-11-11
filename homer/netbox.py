@@ -48,6 +48,15 @@ class BaseNetboxData(UserDict):  # pylint: disable=too-many-ancestors
 class NetboxData(BaseNetboxData):  # pylint: disable=too-many-ancestors
     """Dynamic dictionary to gather the required generic data from Netbox."""
 
+    def _get_vlans(self) -> List[Dict[str, Any]]:
+        """Returns all the vlans defined in Netbox.
+
+        Returns:
+            list: a list of vlans.
+
+        """
+        return [dict(i) for i in self._api.ipam.vlans.all()]
+
 
 class NetboxDeviceData(BaseNetboxData):  # pylint: disable=too-many-ancestors
     """Dynamic dictionary to gather the required device-specific data from Netbox."""

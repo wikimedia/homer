@@ -97,6 +97,13 @@ class TestNetboxData:
         assert isinstance(self.netbox_data, NetboxData)
         assert isinstance(self.netbox_data, UserDict)
 
+    def test_vlans(self):
+        """It should return the defined vlans."""
+        vlan = NetboxObject()
+        vlan.id = 1
+        self.netbox_api.ipam.vlans.all.return_value = [vlan]
+        assert self.netbox_data['vlans'] == [{'id': 1}]
+
 
 class TestNetboxDeviceData:
     """NetboxDeviceData class tests."""
