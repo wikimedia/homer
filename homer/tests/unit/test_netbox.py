@@ -1,4 +1,5 @@
 """Netbox module tests."""
+# pylint: disable=attribute-defined-outside-init
 from collections import UserDict
 from unittest import mock
 
@@ -10,38 +11,55 @@ from homer.devices import Device
 from homer.netbox import BaseNetboxData, NetboxData, NetboxDeviceData, NetboxInventory
 
 
-def mock_netbox_device(name, role, site, status, ip4=False, ip6=False):
+class NetboxObject:  # pylint: disable=too-many-instance-attributes
+    """Helper class to mimic pynetbox objects."""
+
+    def __iter__(self):
+        """Allow to convert the object to dict."""
+        return iter(vars(self).items())
+
+
+def mock_netbox_device(name, role, site, status,  # pylint: disable=too-many-arguments
+                       ip4=False, ip6=False, virtual_chassis=False):
     """Returns a mocked Netbox device object."""
-    device = mock.MagicMock()
+    device = NetboxObject()
     device.name = name
+    device.device_role = NetboxObject()
     device.device_role.slug = role
+    device.site = NetboxObject()
     device.site.slug = site
+    device.status = NetboxObject()
     device.status.value = status
+    device.status.label = str(status)
+    device.device_type = NetboxObject()
     device.device_type.slug = 'typeA'
 
     if ip4:
+        device.primary_ip4 = NetboxObject()
         device.primary_ip4.address = '127.0.0.1/32'
         device.primary_ip4.dns_name = name
     else:
         device.primary_ip4 = None
 
     if ip6:
+        device.primary_ip6 = NetboxObject()
         device.primary_ip6.address = '::1/128'
         device.primary_ip6.dns_name = name
     else:
         device.primary_ip6 = None
 
-    def _deepcopy(_):
-        raise TypeError('Mocked device does not support deepcopy')
-
-    device.__deepcopy__ = _deepcopy
+    if virtual_chassis:
+        device.virtual_chassis = NetboxObject()
+        device.virtual_chassis.id = 1  # pylint: disable=invalid-name
+    else:
+        device.virtual_chassis = None
 
     return device
 
 
 def mock_netbox_virtual_chassis(master, domain):
     """Returns a mocked Netbox virtual chassis object."""
-    vc = mock.MagicMock()
+    vc = NetboxObject()
     vc.master = master
     vc.domain = domain
     return vc
@@ -52,7 +70,6 @@ class TestBaseNetboxData:
 
     def setup_method(self):
         """Initialize the test instances."""
-        # pylint: disable=attribute-defined-outside-init
         self.netbox_api = mock.MagicMock(specset=api)
         self.netbox_data = BaseNetboxData(self.netbox_api)
 
@@ -72,7 +89,6 @@ class TestNetboxData:
 
     def setup_method(self):
         """Initialize the test instances."""
-        # pylint: disable=attribute-defined-outside-init
         self.netbox_api = mock.MagicMock(specset=api)
         self.netbox_data = NetboxData(self.netbox_api)
 
@@ -87,15 +103,41 @@ class TestNetboxDeviceData:
 
     def setup_method(self):
         """Initialize the test instances."""
-        # pylint: disable=attribute-defined-outside-init
         self.netbox_api = mock.MagicMock(specset=api)
-        self.device = Device('device1.example.com', {'role': 'role1', 'site': 'site1'}, {}, {})
+        netbox_device = mock_netbox_device('device1.example.com', 'role1', 'site1', 1)
+        self.device = Device(netbox_device.name, {'netbox_object': netbox_device}, {}, {})
         self.netbox_data = NetboxDeviceData(self.netbox_api, self.device)
 
     def test_init(self):
         """An instance of NetboxData should be also an instance of UserDict."""
         assert isinstance(self.netbox_data, NetboxDeviceData)
         assert isinstance(self.netbox_data, UserDict)
+
+    def test_cached_key(self):
+        """If a key has been already populated it should not call the method again."""
+
+    def test_get_virtual_chassis_members_no_members(self):
+        """If a device is not part of a virtual chassis it should return None."""
+        assert self.netbox_data['virtual_chassis_members'] is None
+
+    def test_get_virtual_chassis_members_with_members(self):
+        """If a device is part of a virtual chassis it should return its members."""
+        netbox_devices = []
+        devices = []
+        names = ('device1.example.com', 'device2.example.com')
+        for name in names:
+            netbox_device = mock_netbox_device(name, 'role1', 'site1', 1, virtual_chassis=True)
+            netbox_devices.append(netbox_device)
+            devices.append(Device(netbox_device.name, {'netbox_object': netbox_device}, {}, {}))
+
+        self.netbox_api.dcim.devices.filter.return_value = netbox_devices
+
+        netbox_data = NetboxDeviceData(self.netbox_api, devices[0])
+        for _ in range(2):
+            assert [d['name'] for d in netbox_data['virtual_chassis_members']] == list(names)
+
+        # Ensure the data was cached and the API was called only once.
+        assert self.netbox_api.dcim.devices.filter.call_count == 1
 
 
 class TestNetboxInventory:

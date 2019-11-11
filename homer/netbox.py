@@ -3,7 +3,7 @@ import ipaddress
 import logging
 
 from collections import UserDict
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 import pynetbox
 
@@ -62,6 +62,20 @@ class NetboxDeviceData(BaseNetboxData):  # pylint: disable=too-many-ancestors
         """
         super().__init__(api)
         self._device = device
+
+    def _get_virtual_chassis_members(self) -> Optional[List[Dict[str, Any]]]:
+        """Returns a list of devices part of the same virtual chassis or None.
+
+        Returns:
+            list: a list of devices.
+            None: the device is not part of a virtual chassis.
+
+        """
+        if not self._device.metadata['netbox_object'].virtual_chassis:
+            return None
+
+        vc_id = self._device.metadata['netbox_object'].virtual_chassis.id
+        return [dict(i) for i in self._api.dcim.devices.filter(virtual_chassis_id=vc_id)]
 
 
 class NetboxInventory:

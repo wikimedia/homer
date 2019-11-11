@@ -17,9 +17,8 @@ whitelist_tests.unit.test_config.test_uncopiable_object.Uncopiable.__deepcopy__
 whitelist_cli = Whitelist()
 whitelist_cli.argument_parser.subparsers.required
 
-# TODO: remove once the first concrete implementation uses self._api
 whitelist_netbox = Whitelist()
-whitelist_netbox.NetboxData._api
+whitelist_netbox.NetboxData._get_virtual_chassis_members
 
 # Needed for vulture < 0.27
 whitelist_mock = Whitelist()
