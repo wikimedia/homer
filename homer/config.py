@@ -1,14 +1,68 @@
 """Config module."""
+import ipaddress
 import itertools
+import logging
 import os
+import re
 
 from copy import deepcopy
-from typing import Dict
+from typing import Dict, Union
 
 import yaml
 
 from homer.devices import Device
 from homer.exceptions import HomerError
+
+logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+
+
+def ip_network_constructor(loader: yaml.constructor.BaseConstructor, node: str) -> Union[str,
+                                                                                         ipaddress.IPv4Network,
+                                                                                         ipaddress.IPv6Network,
+                                                                                         ipaddress.IPv4Interface,
+                                                                                         ipaddress.IPv6Interface]:
+    """Casts a string into a ipaddress.ip_network or ip_interface object.
+
+    Arguments:
+        loader (yaml loader): YAML loaded on which to apply the constructor
+        node: (str): string to be casted
+
+    Returns:
+        ipaddress: an IPv4 or v6 Network or Interface object
+        str: if not possible, return the original string
+
+    """
+    value = loader.construct_scalar(node)
+    try:
+        return ipaddress.ip_network(value)
+    except ValueError:
+        try:
+            return ipaddress.ip_interface(value)
+        except ValueError as e:
+            logger.debug('Casting to ip_network or ip_interface failed, defaulting to string (%s).', e)
+            return value
+
+
+def ip_address_constructor(loader: yaml.constructor.BaseConstructor, node: str) -> Union[str,
+                                                                                         ipaddress.IPv4Address,
+                                                                                         ipaddress.IPv6Address]:
+    """Casts a string into a ipaddress.ip_address object.
+
+    Arguments:
+        loader (yaml loader): YAML loaded on which to apply the constructor
+        node: (str): string to be casted
+
+    Returns:
+        ipaddress: an IPv4 or v6 address object
+        str: if not possible, return the original string
+
+    """
+    value = loader.construct_scalar(node)
+    try:
+        return ipaddress.ip_address(value)
+    except ValueError as e:
+        logger.debug('Casting to ip_network or ip_interface failed, defaulting to string (%s).', e)
+        return value
 
 
 def load_yaml_config(config_file: str) -> Dict:
@@ -24,6 +78,13 @@ def load_yaml_config(config_file: str) -> Dict:
         HomerError: if failed to load the configuration.
 
     """
+    network_re = re.compile(r"^(\d+\.\d+\.\d+\.\d+|(?:[\da-f]{0,4}:){2,7}[\da-f]{0,4})/\d+$")
+    ip_re = re.compile(r"^(\d+\.\d+\.\d+\.\d+|(?:[\da-f]{0,4}:){2,7}[\da-f]{0,4})$")
+    yaml.SafeLoader.add_constructor("!ip_network", ip_network_constructor)
+    yaml.SafeLoader.add_implicit_resolver('!ip_network', network_re, None)
+    yaml.SafeLoader.add_constructor("!ip_address", ip_address_constructor)
+    yaml.SafeLoader.add_implicit_resolver('!ip_address', ip_re, None)
+
     config = {}  # type: Dict
     if not os.path.exists(config_file):
         return config
