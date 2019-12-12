@@ -13,27 +13,24 @@ from homer.devices import Device
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
-class NetboxData(UserDict):  # pylint: disable=too-many-ancestors
-    """Dynamic dictionary to gather the required data from Netbox."""
+class BaseNetboxData(UserDict):  # pylint: disable=too-many-ancestors
+    """Base class to gather data dynamically from Netbox."""
 
-    def __init__(self, api: pynetbox.api, device: Device):
+    def __init__(self, api: pynetbox.api):
         """Initialize the dictionary.
 
-        Parameters:
+        Arguments:
             api (pynetbox.api): the Netbox API instance.
-            device (homer.devices.Device): the device for which to gather the data.
 
         """
         super().__init__()
         self._api = api
-        self._device = device
 
     def __getitem__(self, key: Any) -> Any:
         """Dynamically call the related method, if exists, to return the requested data.
 
-        Parameters:
-            According to Python's datamodel, see:
-            https://docs.python.org/3/reference/datamodel.html#object.__getitem__
+        Parameters according to Python's datamodel, see:
+        https://docs.python.org/3/reference/datamodel.html#object.__getitem__
 
         Returns:
             mixed: the dynamically gathered data.
@@ -48,13 +45,32 @@ class NetboxData(UserDict):  # pylint: disable=too-many-ancestors
         return self.data[key]
 
 
+class NetboxData(BaseNetboxData):  # pylint: disable=too-many-ancestors
+    """Dynamic dictionary to gather the required generic data from Netbox."""
+
+
+class NetboxDeviceData(BaseNetboxData):  # pylint: disable=too-many-ancestors
+    """Dynamic dictionary to gather the required device-specific data from Netbox."""
+
+    def __init__(self, api: pynetbox.api, device: Device):
+        """Initialize the dictionary.
+
+        Arguments:
+            api (pynetbox.api): the Netbox API instance.
+            device (homer.devices.Device): the device for which to gather the data.
+
+        """
+        super().__init__(api)
+        self._device = device
+
+
 class NetboxInventory:
     """Use Netbox as inventory to gather the list of devices to manage."""
 
     def __init__(self, api: pynetbox.api, device_roles: Sequence[str], device_statuses: Sequence[str]):
         """Initialize the instance.
 
-        Parameters:
+        Arguments:
             api (pynetbox.api): the Netbox API instance.
             device_roles (list): a sequence of Netbox device role slug strings to filter the devices.
             device_statuses (list): a sequence of Netbox device status label strings to filter the devices.
@@ -121,7 +137,7 @@ class NetboxInventory:
     def _get_statuses_ids(self, labels: Sequence[str]) -> List[int]:
         """Convert a sequence of Netbox status labels into their IDs.
 
-        Parameters:
+        Arguments:
             labels (list): a list of strings with the status labels.
 
         Returns:
@@ -135,7 +151,7 @@ class NetboxInventory:
     def _get_device_data(device: pynetbox.models.dcim.Devices) -> Dict[str, str]:
         """Return the metadata needed from a Netbox device instance.
 
-        Parameters:
+        Arguments:
             device (pynetbox.models.dcim.Devices): the Netbox device instance.
 
         Returns:

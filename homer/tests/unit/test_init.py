@@ -89,12 +89,14 @@ class TestHomer:
         with open(str(self.output / 'device2.example.com.out')) as f:
             assert textwrap.dedent(expected).lstrip('\n') == f.read()
 
+    @mock.patch('homer.NetboxDeviceData', autospec=True)
     @mock.patch('homer.NetboxData', autospec=True)
-    def test_execute_generate_netbox(self, mocked_netbox_data):
+    def test_execute_generate_netbox(self, mocked_netbox_data, mocked_netbox_device_data):
         """It should execute the whole program based on CLI arguments."""
         config = self.config.copy()
         config['netbox'] = {'url': 'netbox.example.com', 'token': 'token'}
         mocked_netbox_data.return_value = {'netbox_key': 'netbox_value'}
+        mocked_netbox_device_data.return_value = {'netbox_key': 'netbox_device_value'}
 
         ret = Homer(config).generate('device*')
 
@@ -113,6 +115,7 @@ class TestHomer:
             siteB_private_value;
             device2_private_value;
             netbox_value;
+            netbox_device_value;
         """
         with open(str(self.output / 'device2.example.com.out')) as f:
             assert textwrap.dedent(expected).lstrip('\n') == f.read()

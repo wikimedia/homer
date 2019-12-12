@@ -7,7 +7,7 @@ import pytest
 from pynetbox import api
 
 from homer.devices import Device
-from homer.netbox import NetboxData, NetboxInventory
+from homer.netbox import BaseNetboxData, NetboxData, NetboxDeviceData, NetboxInventory
 
 
 def mock_netbox_device(name, role, site, status, ip4=False, ip6=False):
@@ -47,6 +47,26 @@ def mock_netbox_virtual_chassis(master, domain):
     return vc
 
 
+class TestBaseNetboxData:
+    """BaseNetboxData class tests."""
+
+    def setup_method(self):
+        """Initialize the test instances."""
+        # pylint: disable=attribute-defined-outside-init
+        self.netbox_api = mock.MagicMock(specset=api)
+        self.netbox_data = BaseNetboxData(self.netbox_api)
+
+    def test_init(self):
+        """An instance of BaseNetboxData should be also an instance of UserDict."""
+        assert isinstance(self.netbox_data, BaseNetboxData)
+        assert isinstance(self.netbox_data, UserDict)
+
+    def test_getitem_fail(self):
+        """Should raise KeyError if there is no method for that key."""
+        with pytest.raises(KeyError, match='key1'):
+            self.netbox_data['key1']  # pylint: disable=pointless-statement
+
+
 class TestNetboxData:
     """NetboxData class tests."""
 
@@ -54,18 +74,28 @@ class TestNetboxData:
         """Initialize the test instances."""
         # pylint: disable=attribute-defined-outside-init
         self.netbox_api = mock.MagicMock(specset=api)
-        self.device = Device('device1.example.com', {'role': 'role1', 'site': 'site1'}, {}, {})
-        self.netbox_data = NetboxData(self.netbox_api, self.device)
+        self.netbox_data = NetboxData(self.netbox_api)
 
     def test_init(self):
         """An instance of NetboxData should be also an instance of UserDict."""
         assert isinstance(self.netbox_data, NetboxData)
         assert isinstance(self.netbox_data, UserDict)
 
-    def test_getitem_fail(self):
-        """Should raise KeyError if there is no method for that key."""
-        with pytest.raises(KeyError, match='key1'):
-            self.netbox_data['key1']  # pylint: disable=pointless-statement
+
+class TestNetboxDeviceData:
+    """NetboxDeviceData class tests."""
+
+    def setup_method(self):
+        """Initialize the test instances."""
+        # pylint: disable=attribute-defined-outside-init
+        self.netbox_api = mock.MagicMock(specset=api)
+        self.device = Device('device1.example.com', {'role': 'role1', 'site': 'site1'}, {}, {})
+        self.netbox_data = NetboxDeviceData(self.netbox_api, self.device)
+
+    def test_init(self):
+        """An instance of NetboxData should be also an instance of UserDict."""
+        assert isinstance(self.netbox_data, NetboxDeviceData)
+        assert isinstance(self.netbox_data, UserDict)
 
 
 class TestNetboxInventory:

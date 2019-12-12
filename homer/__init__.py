@@ -14,7 +14,7 @@ from pkg_resources import DistributionNotFound, get_distribution
 from homer.config import HierarchicalConfig, load_yaml_config
 from homer.devices import Device, Devices
 from homer.exceptions import HomerError
-from homer.netbox import NetboxData, NetboxInventory
+from homer.netbox import NetboxData, NetboxDeviceData, NetboxInventory
 from homer.templates import Renderer
 from homer.transports.junos import connected_device
 
@@ -184,11 +184,11 @@ class Homer:
                 resp = input('> ')
                 if resp == 'yes':
                     break
-                elif resp == 'no':
+                if resp == 'no':
                     raise HomerError('Commit aborted')
-                else:
-                    print(('Invalid response, please type "yes" to commit or "no" to abort. After 2 wrong answers the '
-                           'commit will be aborted.'))
+
+                print(('Invalid response, please type "yes" to commit or "no" to abort. After 2 wrong answers the '
+                       'commit will be aborted.'))
             else:
                 raise HomerError('Too many invalid answers, commit aborted')
 
@@ -224,13 +224,21 @@ class Homer:
         """
         diffs = defaultdict(list)  # type: defaultdict
         successes = {True: [], False: []}  # type: dict
+        netbox_data = None
+        if self._netbox_api is not None:
+            logger.info('Gathering global Netbox data')
+            netbox_data = NetboxData(self._netbox_api)
+
         for device in self._devices.query(query):
             logger.info('Generating configuration for %s', device.fqdn)
 
             try:
                 device_data = self._config.get(device)
-                if self._netbox_api is not None:
-                    device_data['netbox'] = NetboxData(self._netbox_api, device)
+                if netbox_data is not None:
+                    device_data['netbox'] = {
+                        'global': netbox_data,
+                        'device': NetboxDeviceData(self._netbox_api, device),
+                    }
                 device_config = self._renderer.render(device.metadata['role'], device_data)
             except HomerError:
                 logger.exception('Device %s failed to render the template, skipping.', device.fqdn)
