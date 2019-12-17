@@ -15,17 +15,18 @@ logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
 @contextmanager
-def connected_device(fqdn: str) -> Iterator['ConnectedDevice']:
+def connected_device(fqdn: str, username: str = '') -> Iterator['ConnectedDevice']:
     """Context manager to perform actions on a connected Juniper device.
 
     Arguments:
         fqdn (str): the FQDN of the Juniper device.
+        username (str): the username to use to connect to the Juniper device.
 
     Yields:
         ConnectedDevice: the Juniper connected device instance.
 
     """
-    device = ConnectedDevice(fqdn)
+    device = ConnectedDevice(fqdn, username)
     try:
         yield device
     finally:
@@ -37,16 +38,17 @@ def connected_device(fqdn: str) -> Iterator['ConnectedDevice']:
 class ConnectedDevice:
     """Juniper transport to manage a JunOS connected device."""
 
-    def __init__(self, fqdn: str):
+    def __init__(self, fqdn: str, username: str = ''):
         """Initialize the instance and open the connection to the device.
 
         Arguments:
             fqdn (str): the FQDN of the Juniper device.
+            username (str): the username to use to connect to the Juniper device.
 
         """
         self._fqdn = fqdn
         logger.debug('Connecting to device %s', self._fqdn)
-        self._device = JunOSDevice(host=self._fqdn, port=22)
+        self._device = JunOSDevice(host=self._fqdn, user=username, port=22)
         self._device.open()
         self._device.bind(cu=Config)
 

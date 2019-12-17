@@ -27,6 +27,8 @@ netbox:
             - Staged
 
 transports:
+  # Username is optional, default to system user
+  username: MrFoobar
   junos:
     ignore_warning:
       - statement must contain additional statements
