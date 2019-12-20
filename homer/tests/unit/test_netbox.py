@@ -167,6 +167,7 @@ class TestNetboxInventory:
         filtered_vcs = [
             mock_netbox_device('device1-vc2', 'roleB', 'siteA', 1),
             mock_netbox_device('device1-vc3', 'roleA', 'siteA', 9),
+            mock_netbox_device('', 'roleA', 'siteA', 1),
         ]
         self.selected_devices = selected_devices + selected_vcs
         virtual_chassis = [mock_netbox_virtual_chassis(device, device.name) for device in selected_vcs + filtered_vcs]

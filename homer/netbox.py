@@ -124,6 +124,12 @@ class NetboxInventory:
         devices = {}  # type: Dict[str, Dict[str, str]]
         for vc in self._api.dcim.virtual_chassis.all():
             device = vc.master
+            if not vc.domain:
+                logger.error(
+                    'Unable to determine hostname for virtual chassis of %s, domain property not set, skipping.',
+                    device.name
+                )
+                continue
             if device.status.value not in self._device_statuses:
                 logger.debug('Skipping device %s with status %s', device.name, device.status.label)
                 continue
