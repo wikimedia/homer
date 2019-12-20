@@ -3,6 +3,7 @@ import fnmatch
 import logging
 
 from collections import UserDict
+from operator import attrgetter
 from typing import List, Mapping, NamedTuple, Optional
 
 
@@ -59,4 +60,4 @@ class Devices(UserDict):  # pylint: disable=too-many-ancestors
             results = [device for fqdn, device in self.items() if fnmatch.fnmatch(fqdn, query_string)]
 
         logger.info("Matched %d device(s) for query '%s'", len(results), query_string)
-        return results
+        return sorted(results, key=attrgetter('fqdn'))
