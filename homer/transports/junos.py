@@ -5,10 +5,11 @@ from contextlib import contextmanager
 from typing import Callable, Iterator, List, Tuple, Union
 
 from jnpr.junos import Device as JunOSDevice
-from jnpr.junos.exception import CommitError, UnlockError
+from jnpr.junos.exception import CommitError, RpcTimeoutError, UnlockError
 from jnpr.junos.utils.config import Config
+from ncclient.operations.errors import TimeoutExpiredError
 
-from homer.exceptions import HomerAbortError, HomerError
+from homer.exceptions import HomerAbortError, HomerError, HomerTimeoutError
 
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
@@ -85,6 +86,8 @@ class ConnectedDevice:
         try:
             self._device.cu.commit(confirm=2, comment=message)
             self._device.cu.commit_check()
+        except RpcTimeoutError as e:
+            raise HomerTimeoutError(str(e))
         except CommitError as e:
             raise HomerError('Failed to commit configuration on {fqdn}: {reason}'.format(
                 fqdn=self._fqdn, reason=ConnectedDevice._parse_commit_error(e))) from e
@@ -127,7 +130,10 @@ class ConnectedDevice:
             self._device.cu.unlock()
         except UnlockError:
             pass
-        self._device.close()
+        try:
+            self._device.close()
+        except TimeoutExpiredError:
+            logger.warning('Unable to close the connection to the device: TimeoutExpiredError')
 
     def _prepare(self, config: str, ignore_warning: Union[bool, str, List[str]] = False) -> str:
         """Prepare the new configuration to be committed.

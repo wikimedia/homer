@@ -7,3 +7,7 @@ class HomerError(Exception):
 
 class HomerAbortError(HomerError):
     """Exception class for aborted actions."""
+
+
+class HomerTimeoutError(HomerError):
+    """Exception class for actions that timeout."""

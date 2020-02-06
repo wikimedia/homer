@@ -3,10 +3,11 @@ from unittest import mock
 
 import pytest
 
-from jnpr.junos.exception import CommitError, UnlockError
+from jnpr.junos.exception import CommitError, RpcTimeoutError, UnlockError
 from lxml import etree
+from ncclient.operations.errors import TimeoutExpiredError
 
-from homer.exceptions import HomerAbortError, HomerError
+from homer.exceptions import HomerAbortError, HomerError, HomerTimeoutError
 from homer.transports import junos
 
 
@@ -92,6 +93,21 @@ class TestConnectedDevice:
 
         callback.assert_called_once_with('device1.example.com', 'diff')
         mocked_junos_device.return_value.cu.commit.assert_not_called()
+
+    def test_commit_timeout(self, mocked_junos_device):
+        """It should catch the timeout exception separately."""
+        mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
+        mocked_junos_device.return_value.cu.diff.return_value = 'diff'
+        mocked_junos_device.return_value.cu.commit.side_effect = RpcTimeoutError(
+            mocked_junos_device, 'commit-configuration', 30)
+        device = junos.ConnectedDevice(self.fqdn)
+        callback = mock.Mock()
+
+        with pytest.raises(HomerTimeoutError):
+            device.commit('config', COMMIT_MESSAGE, callback)
+
+        callback.assert_called_once_with('device1.example.com', 'diff')
+        mocked_junos_device.return_value.cu.commit_check.assert_not_called()
 
     def test_commit_prepare_failed(self, mocked_junos_device):
         """It should raise HomerError if unable to prepare the commit."""
@@ -225,6 +241,17 @@ class TestConnectedDevice:
         mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
         mocked_junos_device.return_value.cu.unlock.side_effect = UnlockError(
             etree.XML(ERROR_RESPONSE.format(insert='')))
+        device = junos.ConnectedDevice(self.fqdn)
+
+        device.close()
+
+        mocked_junos_device.return_value.cu.unlock.assert_called_once_with()
+        mocked_junos_device.return_value.close.assert_called_once_with()
+
+    def test_close_timeout(self, mocked_junos_device):
+        """On TimeoutExpiredError it should not fail."""
+        mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
+        mocked_junos_device.return_value.close.side_effect = TimeoutExpiredError
         device = junos.ConnectedDevice(self.fqdn)
 
         device.close()

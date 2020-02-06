@@ -13,7 +13,7 @@ from pkg_resources import DistributionNotFound, get_distribution
 
 from homer.config import HierarchicalConfig, load_yaml_config
 from homer.devices import Device, Devices
-from homer.exceptions import HomerAbortError, HomerError
+from homer.exceptions import HomerAbortError, HomerError, HomerTimeoutError
 from homer.netbox import NetboxData, NetboxDeviceData, NetboxInventory
 from homer.templates import Renderer
 from homer.transports.junos import connected_device
@@ -200,6 +200,8 @@ class Homer:
             except HomerError as e:
                 if e.__class__ is HomerAbortError:
                     logger.warning('%s on %s', e, device.fqdn)
+                elif e.__class__ is HomerTimeoutError:
+                    logger.error(e)
                 else:
                     logger.exception('Failed to commit on %s', device.fqdn)
                 return False, ''
