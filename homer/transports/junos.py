@@ -8,7 +8,7 @@ from jnpr.junos import Device as JunOSDevice
 from jnpr.junos.exception import CommitError, UnlockError
 from jnpr.junos.utils.config import Config
 
-from homer.exceptions import HomerError
+from homer.exceptions import HomerAbortError, HomerError
 
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
@@ -74,6 +74,9 @@ class ConnectedDevice:
                 logger.info('Empty diff for %s, skipping.', self._fqdn)
                 return
             callback(self._fqdn, diff)
+        except HomerAbortError:
+            self._rollback()
+            raise
         except Exception as e:  # pylint: disable=broad-except
             self._rollback()
             raise HomerError('Failed to prepare commit on {fqdn}'.format(fqdn=self._fqdn)) from e

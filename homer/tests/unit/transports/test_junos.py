@@ -6,7 +6,7 @@ import pytest
 from jnpr.junos.exception import CommitError, UnlockError
 from lxml import etree
 
-from homer.exceptions import HomerError
+from homer.exceptions import HomerAbortError, HomerError
 from homer.transports import junos
 
 
@@ -77,6 +77,20 @@ class TestConnectedDevice:
         device.commit('config', COMMIT_MESSAGE, callback)
 
         callback.assert_not_called()
+        mocked_junos_device.return_value.cu.commit.assert_not_called()
+
+    def test_commit_abort(self, mocked_junos_device):
+        """It should abort the commit and not log exception."""
+        mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
+        mocked_junos_device.return_value.cu.diff.return_value = 'diff'
+        device = junos.ConnectedDevice(self.fqdn)
+        callback = mock.Mock()
+        callback.side_effect = HomerAbortError
+
+        with pytest.raises(HomerAbortError):
+            device.commit('config', COMMIT_MESSAGE, callback)
+
+        callback.assert_called_once_with('device1.example.com', 'diff')
         mocked_junos_device.return_value.cu.commit.assert_not_called()
 
     def test_commit_prepare_failed(self, mocked_junos_device):

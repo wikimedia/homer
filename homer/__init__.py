@@ -13,7 +13,7 @@ from pkg_resources import DistributionNotFound, get_distribution
 
 from homer.config import HierarchicalConfig, load_yaml_config
 from homer.devices import Device, Devices
-from homer.exceptions import HomerError
+from homer.exceptions import HomerAbortError, HomerError
 from homer.netbox import NetboxData, NetboxDeviceData, NetboxInventory
 from homer.templates import Renderer
 from homer.transports.junos import connected_device
@@ -186,19 +186,22 @@ class Homer:
                 if resp == 'yes':
                     break
                 if resp == 'no':
-                    raise HomerError('Commit aborted')
+                    raise HomerAbortError('Commit aborted')
 
                 print(('Invalid response, please type "yes" to commit or "no" to abort. After 2 wrong answers the '
                        'commit will be aborted.'))
             else:
-                raise HomerError('Too many invalid answers, commit aborted')
+                raise HomerAbortError('Too many invalid answers, commit aborted')
 
         with connected_device(device.fqdn, self._transport_username) as connection:
             try:
                 connection.commit(device_config, message, callback, self._ignore_warning)
                 return True, ''
-            except HomerError:
-                logger.exception('Failed to commit on %s', device.fqdn)
+            except HomerError as e:
+                if e.__class__ is HomerAbortError:
+                    logger.warning('%s on %s', e, device.fqdn)
+                else:
+                    logger.exception('Failed to commit on %s', device.fqdn)
                 return False, ''
 
     def _prepare_out_dir(self) -> None:
