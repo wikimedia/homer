@@ -72,6 +72,7 @@ class Homer:
 
         self._ignore_warning = self._main_config.get('transports', {}).get('junos', {}).get('ignore_warning', False)
         self._transport_username = self._main_config.get('transports', {}).get('username', '')
+        self._transport_ssh_config = self._main_config.get('transports', {}).get('ssh_config', None)
         self._devices = Devices(devices, devices_config, private_devices_config)
         self._renderer = Renderer(self._main_config['base_paths']['public'])
         self._output_base_path = pathlib.Path(self._main_config['base_paths']['output'])
@@ -156,7 +157,8 @@ class Homer:
             or not and a second element with a string that contains the configuration differences.
 
         """
-        with connected_device(device.fqdn, self._transport_username) as connection:
+        with connected_device(device.fqdn, username=self._transport_username,
+                              ssh_config=self._transport_ssh_config) as connection:
             return connection.commit_check(device_config, self._ignore_warning)
 
     def _device_commit(self, device: Device, device_config: str, *,  # pylint: disable=no-self-use
@@ -193,7 +195,8 @@ class Homer:
             else:
                 raise HomerAbortError('Too many invalid answers, commit aborted')
 
-        with connected_device(device.fqdn, self._transport_username) as connection:
+        with connected_device(device.fqdn, username=self._transport_username,
+                              ssh_config=self._transport_ssh_config) as connection:
             try:
                 connection.commit(device_config, message, callback, self._ignore_warning)
                 return True, ''

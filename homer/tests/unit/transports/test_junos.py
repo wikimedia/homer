@@ -34,8 +34,8 @@ ERROR_RESPONSE = """
 @mock.patch('homer.transports.junos.ConnectedDevice', autospec=True)
 def test_connected_device(mocked_device):
     """It should return a context manager around a connected JunOS device."""
-    with junos.connected_device('device1.example.com', 'username') as device:
-        mocked_device.assert_called_once_with('device1.example.com', 'username')
+    with junos.connected_device('device1.example.com', username='username') as device:
+        mocked_device.assert_called_once_with('device1.example.com', username='username', ssh_config=None)
         assert hasattr(device, 'commit')
         assert not mocked_device.return_value.close.called
 
@@ -54,7 +54,7 @@ class TestConnectedDevice:
     def test_init(self, mocked_junos_device):
         """It should connect to the device."""
         junos.ConnectedDevice(self.fqdn)
-        mocked_junos_device.assert_called_once_with(host=self.fqdn, user='', port=22)
+        mocked_junos_device.assert_called_once_with(host=self.fqdn, user='', port=22, ssh_config=None)
 
     def test_commit_ok(self, mocked_junos_device):
         """It should commit the new config."""

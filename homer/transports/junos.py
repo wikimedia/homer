@@ -2,7 +2,7 @@
 import logging
 
 from contextlib import contextmanager
-from typing import Callable, Iterator, List, Tuple, Union
+from typing import Callable, Iterator, List, Optional, Tuple, Union
 
 from jnpr.junos import Device as JunOSDevice
 from jnpr.junos.exception import CommitError, RpcTimeoutError, UnlockError
@@ -16,18 +16,19 @@ logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
 @contextmanager
-def connected_device(fqdn: str, username: str = '') -> Iterator['ConnectedDevice']:
+def connected_device(fqdn: str, *, username: str = '', ssh_config: Optional[str] = None) -> Iterator['ConnectedDevice']:
     """Context manager to perform actions on a connected Juniper device.
 
     Arguments:
         fqdn (str): the FQDN of the Juniper device.
         username (str): the username to use to connect to the Juniper device.
+        ssh_config (Optional[str]): an ssh_config file if you want other than ~/.ssh/config
 
     Yields:
         ConnectedDevice: the Juniper connected device instance.
 
     """
-    device = ConnectedDevice(fqdn, username)
+    device = ConnectedDevice(fqdn, username=username, ssh_config=ssh_config)
     try:
         yield device
     finally:
@@ -39,17 +40,18 @@ def connected_device(fqdn: str, username: str = '') -> Iterator['ConnectedDevice
 class ConnectedDevice:
     """Juniper transport to manage a JunOS connected device."""
 
-    def __init__(self, fqdn: str, username: str = ''):
+    def __init__(self, fqdn: str, *, username: str = '', ssh_config: Optional[str] = None):
         """Initialize the instance and open the connection to the device.
 
         Arguments:
             fqdn (str): the FQDN of the Juniper device.
             username (str): the username to use to connect to the Juniper device.
+            ssh_config (Optional[str]): an ssh_config file if you want other than ~/.ssh/config
 
         """
         self._fqdn = fqdn
-        logger.debug('Connecting to device %s', self._fqdn)
-        self._device = JunOSDevice(host=self._fqdn, user=username, port=22)
+        logger.debug('Connecting to device %s (user %s ssh_config %s)', self._fqdn, username, ssh_config)
+        self._device = JunOSDevice(host=self._fqdn, user=username, port=22, ssh_config=ssh_config)
         self._device.open()
         self._device.bind(cu=Config)
 

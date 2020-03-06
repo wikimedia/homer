@@ -27,8 +27,8 @@ netbox:
             - Staged
 
 transports:
-  # Username is optional, default to system user
-  username: MrFoobar
+  username: MrFoobar  # username to use for the SSH connection, default to system user. [optional]
+  ssh_config: ~/.ssh/config.homer  # path to a dedicated SSH config for Homer. [optional]
   junos:
     ignore_warning:
       - statement must contain additional statements
