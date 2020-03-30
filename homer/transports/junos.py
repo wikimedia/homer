@@ -74,9 +74,9 @@ class ConnectedDevice:
         try:
             diff = self._prepare(config, ignore_warning)
             if diff is None:
-                logger.info('Empty diff for %s, skipping.', self._fqdn)
-                return
-            callback(self._fqdn, diff)
+                logger.info('Empty diff for %s, skipping callback.', self._fqdn)
+            else:
+                callback(self._fqdn, diff)
         except HomerAbortError:
             self._rollback()
             raise
@@ -86,7 +86,8 @@ class ConnectedDevice:
 
         logger.info('Committing the configuration on %s', self._fqdn)
         try:
-            self._device.cu.commit(confirm=2, comment=message)
+            if diff is not None:
+                self._device.cu.commit(confirm=2, comment=message)
             self._device.cu.commit_check()
         except RpcTimeoutError as e:
             raise HomerTimeoutError(str(e))

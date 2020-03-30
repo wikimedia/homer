@@ -5,6 +5,8 @@ from unittest import mock
 
 import pytest
 
+from jnpr.junos.exception import RpcTimeoutError
+
 import homer
 
 from homer import Homer
@@ -146,3 +148,16 @@ class TestHomer:
         ret = self.homer.commit('device*', message='commit message')
         assert ret == 0
         assert mocked_device.called
+
+    @mock.patch('builtins.input')
+    @mock.patch('homer.sys.stdout.isatty')
+    @mock.patch('homer.transports.junos.JunOSDevice')
+    def test_execute_commit_timeout(self, mocked_device, mocked_isatty, mocked_input, caplog):
+        """It should retry TIMEOUT_ATTEMPTS times and report the failure."""
+        message = 'commit message'
+        mocked_device.return_value.cu.commit.side_effect = RpcTimeoutError(mocked_device, message, 30)
+        mocked_isatty.return_value = True
+        mocked_input.return_value = 'yes'
+        ret = self.homer.commit('device*', message=message)
+        assert ret == 1
+        assert 'Commit attempt 3/3 failed' in caplog.text

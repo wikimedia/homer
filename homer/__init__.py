@@ -19,6 +19,10 @@ from homer.templates import Renderer
 from homer.transports.junos import connected_device
 
 
+TIMEOUT_ATTEMPTS = 3
+""":py:class:`int`: the number of attempts to try when there is a timeout."""
+
+
 try:
     __version__ = get_distribution('homer').version  # Must be the same used as 'name' in setup.py
     """:py:class:`str`: the version of the current Homer package."""
@@ -170,6 +174,9 @@ class Homer:
             device_config (str): the generated configuration for the device.
             message (str): the commit message to use.
 
+        Raises:
+            HomerTimeoutError: on timeout.
+
         Returns:
             tuple: a two-element tuple with a boolean as first parameter that represent the success of the operation
             or not and a second element with a string that contains the configuration differences.
@@ -200,11 +207,11 @@ class Homer:
             try:
                 connection.commit(device_config, message, callback, self._ignore_warning)
                 return True, ''
+            except HomerTimeoutError:
+                raise  # To be catched later for automatic retry
             except HomerError as e:
                 if e.__class__ is HomerAbortError:
                     logger.warning('%s on %s', e, device.fqdn)
-                elif e.__class__ is HomerTimeoutError:
-                    logger.error(e)
                 else:
                     logger.exception('Failed to commit on %s', device.fqdn)
                 return False, ''
@@ -254,7 +261,16 @@ class Homer:
                 successes[False].append(device.fqdn)
                 continue
 
-            device_success, device_diff = callback(device, device_config, **kwargs)
+            for i in range(1, TIMEOUT_ATTEMPTS + 1):
+                try:
+                    device_success, device_diff = callback(device, device_config, **kwargs)
+                    break
+                except HomerTimeoutError as e:
+                    logger.error('Commit attempt %d/%d failed: %s', i, TIMEOUT_ATTEMPTS, e)
+            else:
+                device_success = False
+                device_diff = ''
+
             successes[device_success].append(device.fqdn)
             diffs[device_diff].append(device.fqdn)
 
