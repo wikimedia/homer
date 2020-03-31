@@ -1,4 +1,6 @@
 """Config module tests."""
+import ipaddress
+
 import pytest
 
 from homer.config import HierarchicalConfig, load_yaml_config
@@ -21,8 +23,21 @@ def test_load_yaml_config_raise():
 
 def test_load_yaml_config_valid():
     """Loading a valid config should return its content."""
-    config_dict = load_yaml_config(get_fixture_path('config', 'valid.yaml'))
-    assert 'key' in config_dict
+    config = load_yaml_config(get_fixture_path('config', 'valid.yaml'))
+    assert 'key' in config
+
+
+def test_load_yaml_config_ipaddress_objects():
+    """It should return the configuration with IP addresses, networks and interfaces converted into objects."""
+    config = load_yaml_config(get_fixture_path('config', 'ipaddress.yaml'))
+    assert isinstance(config['ipv4'], ipaddress.IPv4Address)
+    assert isinstance(config['ipv6'], ipaddress.IPv6Address)
+    assert isinstance(config['networkv4'], ipaddress.IPv4Network)
+    assert isinstance(config['networkv6'], ipaddress.IPv6Network)
+    assert isinstance(config['interfacev4'], ipaddress.IPv4Interface)
+    assert isinstance(config['interfacev6'], ipaddress.IPv6Interface)
+    assert isinstance(config['non_parsable_interface'], str)
+    assert isinstance(config['non_parsable_ip'], str)
 
 
 def test_hierarchical_config_get_no_private():

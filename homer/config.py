@@ -61,7 +61,7 @@ def ip_address_constructor(loader: yaml.constructor.BaseConstructor, node: str) 
     try:
         return ipaddress.ip_address(value)
     except ValueError as e:
-        logger.debug('Casting to ip_network or ip_interface failed, defaulting to string (%s).', e)
+        logger.debug('Casting to ip_address failed, defaulting to string (%s).', e)
         return value
 
 

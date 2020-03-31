@@ -1,0 +1,8 @@
+ipv4: 10.0.0.1
+ipv6: fd00::1
+networkv4: 10.0.0.0/24
+networkv6: fd00::/64
+interfacev4: 10.0.0.1/24
+interfacev6: fd00::1/64
+non_parsable_interface: 10.0.0.999/24
+non_parsable_ip: 10.0.0.999
