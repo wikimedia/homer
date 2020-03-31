@@ -1,0 +1,8 @@
+base_paths:
+  public: homer/tests/fixtures/public
+  private: homer/tests/fixtures/private
+
+netbox:
+  url: https://netbox.example.com
+  token: token
+  plugin: homer.tests.fixtures.plugins.plugin

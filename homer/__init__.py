@@ -5,6 +5,7 @@ import pathlib
 import sys
 
 from collections import defaultdict
+from importlib import import_module
 from typing import Callable, DefaultDict, Dict, List, Mapping, Tuple
 
 import pynetbox
@@ -52,9 +53,13 @@ class Homer:
             self._main_config['base_paths']['public'], private_base_path=private_base_path)
 
         self._netbox_api = None
+        self._device_plugin = None
         if self._main_config.get('netbox', {}):
             self._netbox_api = pynetbox.api(
                 self._main_config['netbox']['url'], token=self._main_config['netbox']['token'])
+            if self._main_config['netbox'].get('plugin', ''):
+                self._device_plugin = import_module(  # type: ignore
+                    self._main_config['netbox']['plugin']).NetboxDeviceDataPlugin
 
         devices_all_config = load_yaml_config(
             os.path.join(self._main_config['base_paths']['public'], 'config', 'devices.yaml'))
@@ -255,6 +260,9 @@ class Homer:
                         'global': netbox_data,
                         'device': NetboxDeviceData(self._netbox_api, device),
                     }
+                    if self._device_plugin is not None:
+                        device_data['netbox']['device_plugin'] = self._device_plugin(self._netbox_api, device)
+
                 device_config = self._renderer.render(device.metadata['role'], device_data)
             except HomerError:
                 logger.exception('Device %s failed to render the template, skipping.', device.fqdn)

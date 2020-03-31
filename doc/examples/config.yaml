@@ -25,6 +25,12 @@ netbox:
         device_statuses:
             - Active
             - Staged
+    # Custom external plugin to mangle Netbox data. [optional]
+    # An optional custom external plugin in the form of a Python module, that will be dynamically loaded, if
+    # configured, to allow to make custom mangling of the Netbox data.
+    # The module must be in the Python PATH and define a NetboxDeviceDataPlugin class that inherits from
+    # homer.netbox.BaseNetboxDeviceData.
+    plugin: external.module
 
 # Transpors configuration. [optional]
 transports:

@@ -22,3 +22,9 @@ Also when using Netbox as inventory for each device additional metadata is expos
 - ``netbox_object``: the Netbox device object. Directly exposed data should always be preferred in templates.
   It is exposed to not be a blocker in case some additional data is needed that is not yet exposed by
   Homer explicitely. It could be removed in a future release.
+
+When using Netbox to gather dynamic configuration, it's also possible to write a custom plugin in the form of a
+Python module that implements a class called ``NetboxDeviceDataPlugin`` that inherits from
+:py:class:`homer.netbox.BaseNetboxDeviceData` and is in the Python ``PATH``.
+Assuming that the plugin class implements a method named ``_get_name``, it will be accessible within the templates
+with ``netbox.device_plugin.name``.

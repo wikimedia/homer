@@ -45,6 +45,21 @@ class BaseNetboxData(UserDict):  # pylint: disable=too-many-ancestors
         return self.data[key]
 
 
+class BaseNetboxDeviceData(BaseNetboxData):  # pylint: disable=too-many-ancestors
+    """Base class to gather device-specific data dynamically from Netbox."""
+
+    def __init__(self, api: pynetbox.api, device: Device):
+        """Initialize the dictionary.
+
+        Arguments:
+            api (pynetbox.api): the Netbox API instance.
+            device (homer.devices.Device): the device for which to gather the data.
+
+        """
+        super().__init__(api)
+        self._device = device
+
+
 class NetboxData(BaseNetboxData):  # pylint: disable=too-many-ancestors
     """Dynamic dictionary to gather the required generic data from Netbox."""
 
@@ -58,19 +73,8 @@ class NetboxData(BaseNetboxData):  # pylint: disable=too-many-ancestors
         return [dict(i) for i in self._api.ipam.vlans.all()]
 
 
-class NetboxDeviceData(BaseNetboxData):  # pylint: disable=too-many-ancestors
+class NetboxDeviceData(BaseNetboxDeviceData):  # pylint: disable=too-many-ancestors
     """Dynamic dictionary to gather the required device-specific data from Netbox."""
-
-    def __init__(self, api: pynetbox.api, device: Device):
-        """Initialize the dictionary.
-
-        Arguments:
-            api (pynetbox.api): the Netbox API instance.
-            device (homer.devices.Device): the device for which to gather the data.
-
-        """
-        super().__init__(api)
-        self._device = device
 
     def _get_virtual_chassis_members(self) -> Optional[List[Dict[str, Any]]]:
         """Returns a list of devices part of the same virtual chassis or None.

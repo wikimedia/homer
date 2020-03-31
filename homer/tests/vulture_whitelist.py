@@ -13,6 +13,7 @@ whitelist_tests = Whitelist()
 whitelist_tests.unit.test_devices.TestDevices.setup_method
 whitelist_tests.unit.test_devices.TestDevices.setup_method_fixture
 whitelist_tests.unit.test_config.test_uncopiable_object.Uncopiable.__deepcopy__
+whitelist_tests.fixtures.plugins.plugin.NetboxDeviceDataPlugin._get_netbox_device_plugin
 
 whitelist_cli = Whitelist()
 whitelist_cli.argument_parser.subparsers.required

@@ -14,13 +14,19 @@ from homer.config import load_yaml_config
 from homer.tests import get_fixture_path
 
 
-def setup_tmp_path(path):
+def setup_tmp_path(file_name, path):
     """Initialize the temporary directory and configuration."""
     output = path / 'output'
     output.mkdir()
-    config = load_yaml_config(get_fixture_path('cli', 'config.yaml'))
+    config = load_yaml_config(get_fixture_path('cli', file_name))
     config['base_paths']['output'] = str(output)
     return output, config
+
+
+def get_generated_files(path):
+    """Get all the generated files in the output directory."""
+    return [out_file.name for out_file in path.iterdir()
+            if out_file.is_file() and out_file.suffix == Homer.OUT_EXTENSION]
 
 
 def test_version():
@@ -35,13 +41,8 @@ class TestHomer:
     def setup_method_fixture(self, tmp_path):
         """Initialize the instance."""
         # pylint: disable=attribute-defined-outside-init
-        self.output, self.config = setup_tmp_path(tmp_path)
+        self.output, self.config = setup_tmp_path('config.yaml', tmp_path)
         self.homer = Homer(self.config)
-
-    def get_generated_files(self):
-        """Get all the generated files in the output directory."""
-        return [out_file.name for out_file in self.output.iterdir()
-                if out_file.is_file() and out_file.suffix == Homer.OUT_EXTENSION]
 
     def test_generate_ok(self):
         """It should generate the compiled configuration files for the matching devices."""
@@ -53,7 +54,7 @@ class TestHomer:
         ret = self.homer.generate('device*')
 
         assert ret == 0
-        assert sorted(self.get_generated_files()) == ['device1.example.com.out', 'device2.example.com.out']
+        assert sorted(get_generated_files(self.output)) == ['device1.example.com.out', 'device2.example.com.out']
         expected = """
             roleB;
             siteB;
@@ -78,7 +79,7 @@ class TestHomer:
         ret = Homer(config).generate('device*')
 
         assert ret == 0
-        assert sorted(self.get_generated_files()) == ['device1.example.com.out', 'device2.example.com.out']
+        assert sorted(get_generated_files(self.output)) == ['device1.example.com.out', 'device2.example.com.out']
         expected = """
             roleB;
             siteB;
@@ -87,37 +88,6 @@ class TestHomer:
             roleB_value;
             siteB_value;
             device2_value;
-        """
-        with open(str(self.output / 'device2.example.com.out')) as f:
-            assert textwrap.dedent(expected).lstrip('\n') == f.read()
-
-    @mock.patch('homer.NetboxDeviceData', autospec=True)
-    @mock.patch('homer.NetboxData', autospec=True)
-    def test_execute_generate_netbox(self, mocked_netbox_data, mocked_netbox_device_data):
-        """It should execute the whole program based on CLI arguments."""
-        config = self.config.copy()
-        config['netbox'] = {'url': 'netbox.example.com', 'token': 'token'}
-        mocked_netbox_data.return_value = {'netbox_key': 'netbox_value'}
-        mocked_netbox_device_data.return_value = {'netbox_key': 'netbox_device_value'}
-
-        ret = Homer(config).generate('device*')
-
-        assert ret == 0
-        assert sorted(self.get_generated_files()) == ['device1.example.com.out', 'device2.example.com.out']
-        expected = """
-            roleB;
-            siteB;
-            device2.example.com;
-            common_value;
-            roleB_value;
-            siteB_value;
-            device2_value;
-            common_private_value;
-            roleB_private_value;
-            siteB_private_value;
-            device2_private_value;
-            netbox_value;
-            netbox_device_value;
         """
         with open(str(self.output / 'device2.example.com.out')) as f:
             assert textwrap.dedent(expected).lstrip('\n') == f.read()
@@ -127,7 +97,7 @@ class TestHomer:
         ret = self.homer.generate('site:siteC')
 
         assert ret == 1
-        assert self.get_generated_files() == ['valid.example.com.out']
+        assert get_generated_files(self.output) == ['valid.example.com.out']
 
     @mock.patch('homer.transports.junos.JunOSDevice')
     def test_execute_diff_ok(self, mocked_device):
@@ -161,3 +131,50 @@ class TestHomer:
         ret = self.homer.commit('device*', message=message)
         assert ret == 1
         assert 'Commit attempt 3/3 failed' in caplog.text
+
+
+class TestHomerNetbox:
+    """Homer class tests with Netbox enabled."""
+
+    @pytest.fixture(autouse=True)
+    @mock.patch('homer.pynetbox.api', autospec=True)
+    def setup_method_fixture(self, mocked_pynetbox, tmp_path):
+        """Initialize the instance."""
+        # pylint: disable=attribute-defined-outside-init
+        self.output, self.config = setup_tmp_path('config-netbox.yaml', tmp_path)
+        self.mocked_pynetbox = mocked_pynetbox
+        self.homer = Homer(self.config)
+
+    def test_init(self):
+        """The instance should have setup the Netbox API."""
+        self.mocked_pynetbox.assert_called_once_with('https://netbox.example.com', token='token')  # nosec
+
+    @mock.patch('homer.NetboxDeviceData', autospec=True)
+    @mock.patch('homer.NetboxData', autospec=True)
+    def test_execute_generate(self, mocked_netbox_data, mocked_netbox_device_data):
+        """It should generate the configuration for the given device, including netbox data."""
+        mocked_netbox_data.return_value = {'netbox_key': 'netbox_value'}
+        mocked_netbox_device_data.return_value = {'netbox_key': 'netbox_device_value'}
+
+        ret = self.homer.generate('device*')
+
+        assert ret == 0
+        assert sorted(get_generated_files(self.output)) == ['device1.example.com.out', 'device2.example.com.out']
+        expected = """
+            roleB;
+            siteB;
+            device2.example.com;
+            common_value;
+            roleB_value;
+            siteB_value;
+            device2_value;
+            common_private_value;
+            roleB_private_value;
+            siteB_private_value;
+            device2_private_value;
+            netbox_value;
+            netbox_device_value;
+            netbox_device_plugin;
+        """
+        with open(str(self.output / 'device2.example.com.out')) as f:
+            assert textwrap.dedent(expected).lstrip('\n') == f.read()
