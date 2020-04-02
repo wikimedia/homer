@@ -159,6 +159,9 @@ class NetboxInventory:
                 fqdn = device.primary_ip4.dns_name
             elif device.primary_ip6 is not None and device.primary_ip6.dns_name:
                 fqdn = device.primary_ip6.dns_name
+            elif device.platform is None:
+                logger.debug('Device %s missing FQDN and Platform, assuming non-manageable, skipping.', device.name)
+                continue
             else:
                 logger.error('Unable to determine FQDN for device %s, skipping.', device.name)
                 continue

@@ -19,8 +19,8 @@ class NetboxObject:  # pylint: disable=too-many-instance-attributes
         return iter(vars(self).items())
 
 
-def mock_netbox_device(name, role, site, status,  # pylint: disable=too-many-arguments
-                       ip4=False, ip6=False, virtual_chassis=False):
+def mock_netbox_device(name, role, site, status,  # pylint: disable=too-many-arguments,too-many-branches
+                       ip4=False, ip6=False, virtual_chassis=False, platform=True):
     """Returns a mocked Netbox device object."""
     device = NetboxObject()
     device.name = name
@@ -53,6 +53,12 @@ def mock_netbox_device(name, role, site, status,  # pylint: disable=too-many-arg
         device.virtual_chassis.id = 1  # pylint: disable=invalid-name
     else:
         device.virtual_chassis = None
+
+    if platform:
+        device.platform = NetboxObject()
+        device.platform.slug = 'osA'
+    else:
+        device.platform = None
 
     return device
 
@@ -163,6 +169,7 @@ class TestNetboxInventory:
         filtered_devices = [
             mock_netbox_device('device3', 'roleB', 'siteB', 1),
             mock_netbox_device('device4', 'roleA', 'siteA', 1),
+            mock_netbox_device('device2', 'roleA', 'siteA', 3, platform=False),
         ]
         filtered_vcs = [
             mock_netbox_device('device1-vc2', 'roleB', 'siteA', 1),
