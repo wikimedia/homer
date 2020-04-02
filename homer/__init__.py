@@ -22,6 +22,8 @@ from homer.transports.junos import connected_device
 
 TIMEOUT_ATTEMPTS = 3
 """:py:class:`int`: the number of attempts to try when there is a timeout."""
+DIFF_EXIT_CODE = 99
+""":py:class:`int`: the exit code used when the diff command is executed and there is a diff."""
 
 
 try:
@@ -114,17 +116,24 @@ class Homer:
         """
         logger.info('Generating diff for query %s', query)
         successes, diffs = self._execute(self._device_diff, query)
+        has_diff = False
         for diff, diff_devices in diffs.items():
             print('Diff for {n} devices: {devices}'.format(n=len(diff_devices), devices=diff_devices))
             if diff is None:
                 print('# No diff')
-            elif omit_diff:
-                print('# Non-empty diff omitted, -o/--omit-diff set')
             else:
-                print(diff)
+                has_diff = True
+                if omit_diff:
+                    print('# Non-empty diff omitted, -o/--omit-diff set')
+                else:
+                    print(diff)
             print('---------------')
 
-        return Homer._parse_results(successes)
+        ret = Homer._parse_results(successes)
+        if ret == 0 and has_diff:
+            return DIFF_EXIT_CODE
+
+        return ret
 
     def commit(self, query: str, *, message: str = '-') -> int:
         """Commit the generated configuration asking for confirmation.
