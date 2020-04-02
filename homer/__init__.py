@@ -135,12 +135,13 @@ class Homer:
         successes, _ = self._execute(self._device_commit, query, message=message)
         return Homer._parse_results(successes)
 
-    def _device_generate(self, device: Device, device_config: str) -> Tuple[bool, str]:
+    def _device_generate(self, device: Device, device_config: str, _: int) -> Tuple[bool, str]:
         """Save the generated configuration in a local file.
 
         Arguments:
             device (homer.devices.Device): the device instance.
             device_config (str): the generated configuration for the device.
+            attempt (int, unused): the current attempt number.
 
         Returns:
             tuple: a two-element tuple with a boolean as first parameter that represent the success of the operation
@@ -154,12 +155,14 @@ class Homer:
 
         return True, ''
 
-    def _device_diff(self, device: Device, device_config: str) -> Tuple[bool, str]:  # pylint: disable=no-self-use
+    def _device_diff(self, device: Device, device_config: str,
+                     _: int) -> Tuple[bool, str]:  # pylint: disable=no-self-use
         """Perform a configuration diff between the generated configuration and the live one.
 
         Arguments:
             device (homer.devices.Device): the device instance.
             device_config (str): the generated configuration for the device.
+            attempt (int, unused): the current attempt number.
 
         Returns:
             tuple: a two-element tuple with a boolean as first parameter that represent the success of the operation
@@ -170,13 +173,14 @@ class Homer:
                               ssh_config=self._transport_ssh_config) as connection:
             return connection.commit_check(device_config, self._ignore_warning)
 
-    def _device_commit(self, device: Device, device_config: str, *,  # pylint: disable=no-self-use
+    def _device_commit(self, device: Device, device_config: str, attempt: int, *,  # pylint: disable=no-self-use
                        message: str = '-') -> Tuple[bool, str]:
         """Commit a new configuration to the device.
 
         Arguments:
             device (homer.devices.Device): the device instance.
             device_config (str): the generated configuration for the device.
+            attempt (int): the current attempt number.
             message (str): the commit message to use.
 
         Raises:
@@ -207,10 +211,12 @@ class Homer:
             else:
                 raise HomerAbortError('Too many invalid answers, commit aborted')
 
+        is_retry = (attempt != 1)
         with connected_device(device.fqdn, username=self._transport_username,
                               ssh_config=self._transport_ssh_config) as connection:
             try:
-                connection.commit(device_config, message, callback, self._ignore_warning)
+                connection.commit(device_config, message, callback, ignore_warning=self._ignore_warning,
+                                  is_retry=is_retry)
                 return True, ''
             except HomerTimeoutError:
                 raise  # To be catched later for automatic retry
@@ -269,12 +275,12 @@ class Homer:
                 successes[False].append(device.fqdn)
                 continue
 
-            for i in range(1, TIMEOUT_ATTEMPTS + 1):
+            for attempt in range(1, TIMEOUT_ATTEMPTS + 1):
                 try:
-                    device_success, device_diff = callback(device, device_config, **kwargs)
+                    device_success, device_diff = callback(device, device_config, attempt, **kwargs)
                     break
                 except HomerTimeoutError as e:
-                    logger.error('Commit attempt %d/%d failed: %s', i, TIMEOUT_ATTEMPTS, e)
+                    logger.error('Commit attempt %d/%d failed: %s', attempt, TIMEOUT_ATTEMPTS, e)
             else:
                 device_success = False
                 device_diff = ''

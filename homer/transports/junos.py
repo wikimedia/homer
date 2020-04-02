@@ -55,8 +55,8 @@ class ConnectedDevice:
         self._device.open()
         self._device.bind(cu=Config)
 
-    def commit(self, config: str, message: str, callback: Callable,
-               ignore_warning: Union[bool, str, List[str]] = False) -> None:
+    def commit(self, config: str, message: str, callback: Callable, *,  # noqa, mccabe: MC0001 too complex (11)
+               ignore_warning: Union[bool, str, List[str]] = False, is_retry: bool = False) -> None:
         """Commit the loaded configuration.
 
         Arguments:
@@ -66,6 +66,10 @@ class ConnectedDevice:
                 current device and a string with the diff between the current configuration and the new one. The
                 callback must raise any exception if the execution should be interrupted and the config rollbacked or
                 return :py:data:`None`.
+            ignore_warning (mixed, optional): the warnings to tell JunOS to ignore, see:
+                https://junos-pyez.readthedocs.io/en/2.3.0/jnpr.junos.utils.html#jnpr.junos.utils.config.Config.load
+            is_retry (bool, optional): whether this is a retry and the commit_check should be run anyway, also if the
+                diff is empty.
 
         Raises:
             HomerError: when failing to commit the configuration.
@@ -74,7 +78,9 @@ class ConnectedDevice:
         try:
             diff = self._prepare(config, ignore_warning)
             if diff is None:
-                logger.info('Empty diff for %s, skipping callback.', self._fqdn)
+                if not is_retry:
+                    logger.info('Empty diff for %s, skipping device.', self._fqdn)
+                    return
             else:
                 callback(self._fqdn, diff)
         except HomerAbortError:

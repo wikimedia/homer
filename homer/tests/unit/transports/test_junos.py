@@ -68,17 +68,22 @@ class TestConnectedDevice:
         callback.assert_called_once_with('device1.example.com', 'diff')
         mocked_junos_device.return_value.cu.commit.assert_called_once_with(confirm=2, comment=COMMIT_MESSAGE)
 
-    def test_commit_empty_diff(self, mocked_junos_device):
-        """It should skip the commit on empty diff."""
+    @pytest.mark.parametrize('is_retry', (True, False))
+    def test_commit_empty_diff(self, mocked_junos_device, is_retry):
+        """It should skip the callback on empty diff and based on the is_retry parameter run commit_check or not."""
         mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
         mocked_junos_device.return_value.cu.diff.return_value = None
         device = junos.ConnectedDevice(self.fqdn)
         callback = mock.Mock()
 
-        device.commit('config', COMMIT_MESSAGE, callback)
+        device.commit('config', COMMIT_MESSAGE, callback, is_retry=is_retry)
 
         callback.assert_not_called()
         mocked_junos_device.return_value.cu.commit.assert_not_called()
+        if is_retry:
+            mocked_junos_device.return_value.cu.commit_check.assert_called_once_with()
+        else:
+            mocked_junos_device.return_value.cu.commit_check.assert_not_called()
 
     def test_commit_abort(self, mocked_junos_device):
         """It should abort the commit and not log exception."""
