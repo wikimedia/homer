@@ -30,8 +30,12 @@ def argument_parser() -> argparse.ArgumentParser:
     subparsers.required = True
 
     subparsers.add_parser('generate', help='Generate the configurations locally.')
-    subparsers.add_parser('diff', help=('Perform a commit check and show the differences between the generated '
-                                        'configuration and the live one.'))
+
+    diff = subparsers.add_parser('diff', help=('Perform a commit check and show the differences between the generated '
+                                               'configuration and the live one.'))
+    diff.add_argument('-o', '--omit-diff', action='store_true',
+                      help='Omit the actual diff to prevent the leak of private data')
+
     commit = subparsers.add_parser('commit', help='Actually commit the generated configuration to the devices.')
     commit.add_argument('message', help='A mandatory commit message. The running username will be automatically added.')
 
@@ -56,6 +60,8 @@ def main(argv: Optional[list] = None) -> int:
     kwargs = {}
     if args.action == 'commit':
         kwargs['message'] = args.message
+    elif args.action == 'diff':
+        kwargs['omit_diff'] = args.omit_diff
 
     config = load_yaml_config(args.config)
     runner = Homer(config)

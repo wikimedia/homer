@@ -99,13 +99,22 @@ class TestHomer:
         assert ret == 1
         assert get_generated_files(self.output) == ['valid.example.com.out']
 
+    @pytest.mark.parametrize('diff, omit_diff, expected', (
+        (None, False, '# No diff'),
+        (None, True, '# No diff'),
+        ('some diff', False, 'some diff'),
+        ('some diff', True, '# Non-empty diff omitted, -o/--omit-diff set'),
+    ))
     @mock.patch('homer.transports.junos.JunOSDevice')
-    def test_execute_diff_ok(self, mocked_device):
+    def test_execute_diff_ok(self, mocked_device, diff, omit_diff, expected, capsys):
         """It should diff the compiled configuration with the live one."""
-        # TODO: to be expanded
-        ret = self.homer.diff('device*')
+        mocked_device.return_value.cu.diff.return_value = diff
+        ret = self.homer.diff('device*', omit_diff=omit_diff)
+
+        out, _ = capsys.readouterr()
         assert ret == 0
-        assert mocked_device.called
+        assert mocked_device.return_value.cu.diff.called
+        assert expected in out
 
     @mock.patch('builtins.input')
     @mock.patch('homer.sys.stdout.isatty')

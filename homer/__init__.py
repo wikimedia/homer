@@ -101,11 +101,12 @@ class Homer:
         successes, _ = self._execute(self._device_generate, query)
         return Homer._parse_results(successes)
 
-    def diff(self, query: str) -> int:
+    def diff(self, query: str, *, omit_diff: bool = False) -> int:
         """Generate the configuration and check the diff with the current live one.
 
         Arguments:
             query (str): the query to select the devices.
+            omit_diff (bool, optional): whether to not show the actual diff to avoid leak of private data.
 
         Return:
             int: ``0`` on success, a small positive integer on failure.
@@ -115,7 +116,12 @@ class Homer:
         successes, diffs = self._execute(self._device_diff, query)
         for diff, diff_devices in diffs.items():
             print('Diff for {n} devices: {devices}'.format(n=len(diff_devices), devices=diff_devices))
-            print(diff)
+            if diff is None:
+                print('# No diff')
+            elif omit_diff:
+                print('# Non-empty diff omitted, -o/--omit-diff set')
+            else:
+                print(diff)
             print('---------------')
 
         return Homer._parse_results(successes)
