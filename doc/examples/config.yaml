@@ -1,36 +1,36 @@
 base_paths:
-    # Base path of public configuration.
-    public: /path/to/public-config-and-templates-root
-    # [optional] Base path of private configuration.
-    private: /path/to/private-config-and-templates-root
-    # Base path for the output files generated on the 'generate' action. The directory will be cleaned from all '*.out' files.
-    output: /path/where/to/generate/output/files
+  # Base path of public configuration.
+  public: /path/to/public-config-and-templates-root
+  # [optional] Base path of private configuration.
+  private: /path/to/private-config-and-templates-root
+  # Base path for the output files generated on the 'generate' action. The directory will be cleaned from all '*.out' files.
+  output: /path/where/to/generate/output/files
 
 # Netbox configuration [optional]
 netbox:
-    # Netbox URL
-    url: https://netbox.example.com:443
-    # Netbox token
-    token: token_value
-    # Inventory parmeters. [optional]
-    # If defined the list of devices will be gathered from Netbox, not from the config file. In this case the
-    # configuration file is used only to populate the device configuration data to be used when computing the generated
-    # configuration for the device.
-    inventory:
-        # Device roles to include in the selection. Values must match Netbox's slug values.
-        device_roles:
-            - roleA
-            - roleB
-        # Device statuses to include in the selection. Values must match Netbox's statuses.
-        device_statuses:
-            - Active
-            - Staged
-    # Custom external plugin to mangle Netbox data. [optional]
-    # An optional custom external plugin in the form of a Python module, that will be dynamically loaded, if
-    # configured, to allow to make custom mangling of the Netbox data.
-    # The module must be in the Python PATH and define a NetboxDeviceDataPlugin class that inherits from
-    # homer.netbox.BaseNetboxDeviceData.
-    plugin: external.module
+  # Netbox URL
+  url: https://netbox.example.com:443
+  # Netbox token
+  token: token_value
+  # Inventory parmeters. [optional]
+  # If defined the list of devices will be gathered from Netbox, not from the config file. In this case the
+  # configuration file is used only to populate the device configuration data to be used when computing the generated
+  # configuration for the device.
+  inventory:
+    # Device roles to include in the selection. Values must match Netbox's slug values.
+    device_roles:
+      - roleA
+      - roleB
+    # Device statuses to include in the selection. Values must match Netbox's statuses.
+    device_statuses:
+      - Active
+      - Staged
+  # Custom external plugin to mangle Netbox data. [optional]
+  # An optional custom external plugin in the form of a Python module, that will be dynamically loaded, if
+  # configured, to allow to make custom mangling of the Netbox data.
+  # The module must be in the Python PATH and define a NetboxDeviceDataPlugin class that inherits from
+  # homer.netbox.BaseNetboxDeviceData.
+  plugin: external.module
 
 # Transpors configuration. [optional]
 transports:
