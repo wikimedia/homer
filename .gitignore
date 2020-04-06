@@ -9,6 +9,7 @@
 /.tox/
 /dist/
 /doc/build/
+/plugins
 /*.egg-info/
 __pycache__/
 *.pyc
