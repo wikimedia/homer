@@ -119,7 +119,7 @@ class Homer:
         has_diff = False
         for diff, diff_devices in diffs.items():
             print('Diff for {n} devices: {devices}'.format(n=len(diff_devices), devices=diff_devices))
-            if diff is None:
+            if not diff:
                 print('# No diff')
             else:
                 has_diff = True

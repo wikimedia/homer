@@ -35,6 +35,10 @@ def connected_device(fqdn: str, *, username: str = '', ssh_config: Optional[str]
         device.close()
 
 
+class JunosPrepareError(HomerError):
+    """Exception raised when it fails to load and diff the configuration on the device."""
+
+
 # pylint: disable=no-member
 # Pylint doesn't recognize the 'cu' member in junos.Device instances and generated-members seems to have a bug
 class ConnectedDevice:
@@ -75,24 +79,24 @@ class ConnectedDevice:
             HomerError: when failing to commit the configuration.
 
         """
-        try:
-            diff = self._prepare(config, ignore_warning)
-            if diff is None:
-                if not is_retry:
-                    logger.info('Empty diff for %s, skipping device.', self._fqdn)
-                    return
-            else:
+        diff = self._prepare(config, ignore_warning)
+        if not diff:
+            if not is_retry:
+                logger.info('Empty diff for %s, skipping device.', self._fqdn)
+                return
+        else:
+            try:
                 callback(self._fqdn, diff)
-        except HomerAbortError:
-            self._rollback()
-            raise
-        except Exception as e:  # pylint: disable=broad-except
-            self._rollback()
-            raise HomerError('Failed to prepare commit on {fqdn}'.format(fqdn=self._fqdn)) from e
+            except HomerAbortError:
+                self._rollback()
+                raise
+            except Exception as e:  # pylint: disable=broad-except
+                self._rollback()
+                raise HomerError('Failed to execute callback on {fqdn}'.format(fqdn=self._fqdn)) from e
 
         logger.info('Committing the configuration on %s', self._fqdn)
         try:
-            if diff is not None:
+            if diff:
                 self._device.cu.commit(confirm=2, comment=message)
             self._device.cu.commit_check()
         except RpcTimeoutError as e:
@@ -116,10 +120,14 @@ class ConnectedDevice:
 
         """
         success = False
-        diff = ''
+        diff = self._prepare(config, ignore_warning)
+        if not diff:
+            logger.info('Empty diff for %s, skipping device.', self._fqdn)
+            self._rollback()
+            return True, diff
+
+        logger.info('Running commit check on %s', self._fqdn)
         try:
-            diff = self._prepare(config, ignore_warning)
-            logger.info('Running commit check on %s', self._fqdn)
             self._device.cu.commit_check()
             success = True
         except CommitError as e:
@@ -150,14 +158,27 @@ class ConnectedDevice:
         Arguments:
             config (str): the device new configuration.
 
+        Raises:
+            JunosPrepareError: on failure.
+
         Returns:
             str: the differences between the current config and the new one.
 
         """
         logger.debug('Preparing the configuration on %s', self._fqdn)
-        self._device.cu.lock()
-        self._device.cu.load(config, format='text', merge=False, ignore_warning=ignore_warning)
-        return self._device.cu.diff()
+        diff = ''
+        try:
+            self._device.cu.lock()
+            self._device.cu.load(config, format='text', merge=False, ignore_warning=ignore_warning)
+            diff = self._device.cu.diff()
+        except Exception as e:
+            self._rollback()
+            raise JunosPrepareError('Failed to prepare the configuration on {fqdn}'.format(fqdn=self._fqdn)) from e
+
+        if diff is None:
+            diff = ''
+
+        return diff
 
     def _rollback(self) -> None:
         """Rollback the current staged configuration."""

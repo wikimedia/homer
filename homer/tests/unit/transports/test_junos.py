@@ -120,10 +120,23 @@ class TestConnectedDevice:
         mocked_junos_device.return_value.cu.diff.side_effect = ValueError
         device = junos.ConnectedDevice(self.fqdn)
         callback = mock.Mock()
-        with pytest.raises(HomerError, match='Failed to prepare commit on'):
+        with pytest.raises(junos.JunosPrepareError, match='Failed to prepare the configuration on'):
             device.commit('config', COMMIT_MESSAGE, callback)
 
         callback.assert_not_called()
+        mocked_junos_device.return_value.cu.commit.assert_not_called()
+
+    def test_commit_callback_failed(self, mocked_junos_device):
+        """It should raise HomerError if the call to the callback fails."""
+        mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
+        mocked_junos_device.return_value.cu.diff.return_value = 'diff'
+        device = junos.ConnectedDevice(self.fqdn)
+        callback = mock.Mock()
+        callback.side_effect = RuntimeError
+        with pytest.raises(HomerError, match='Failed to execute callback on'):
+            device.commit('config', COMMIT_MESSAGE, callback)
+
+        assert callback.called
         mocked_junos_device.return_value.cu.commit.assert_not_called()
 
     def test_commit_commit_error(self, mocked_junos_device):

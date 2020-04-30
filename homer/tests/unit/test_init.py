@@ -100,8 +100,8 @@ class TestHomer:
         assert get_generated_files(self.output) == ['valid.example.com.out']
 
     @pytest.mark.parametrize('diff, omit_diff, expected, ret', (
-        (None, False, '# No diff', 0),
-        (None, True, '# No diff', 0),
+        ('', False, '# No diff', 0),
+        ('', True, '# No diff', 0),
         ('some diff', False, 'some diff', 99),
         ('some diff', True, '# Non-empty diff omitted, -o/--omit-diff set', 99),
     ))
