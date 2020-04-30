@@ -1,6 +1,19 @@
 Homer Changelog
 ---------------
 
+
+`v0.2.1`_ (2020-04-30)
+^^^^^^^^^^^^^^^^^^^^^^
+
+Minor improvements
+""""""""""""""""""
+
+* Add Python 3.8 support
+* transports.junos: do not commit check on empty diff:
+
+  * When performing a commit check, do not actually run the ``commit_check`` on the device if there is no diff.
+  * In all cases perform a rollback, even on empty diff.
+
 `v0.2.0`_ (2020-04-06)
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -91,3 +104,4 @@ Miscellanea
 .. _`v0.1.0`: https://github.com/wikimedia/operations-software-homer/releases/tag/v0.1.0
 .. _`v0.1.1`: https://github.com/wikimedia/operations-software-homer/releases/tag/v0.1.1
 .. _`v0.2.0`: https://github.com/wikimedia/operations-software-homer/releases/tag/v0.2.0
+.. _`v0.2.1`: https://github.com/wikimedia/homer/releases/tag/v0.2.1
