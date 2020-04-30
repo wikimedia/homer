@@ -25,6 +25,6 @@ Also when using Netbox as inventory for each device additional metadata is expos
 
 When using Netbox to gather dynamic configuration, it's also possible to write a custom plugin in the form of a
 Python module that implements a class called ``NetboxDeviceDataPlugin`` that inherits from
-:py:class:`homer.netbox.BaseNetboxDeviceData` and is in the Python ``PATH``.
+`homer.netbox.BaseNetboxDeviceData` and is in the Python ``PATH``.
 Assuming that the plugin class implements a method named ``_get_name``, it will be accessible within the templates
 with ``netbox.device_plugin.name``.
