@@ -2,6 +2,18 @@ Homer Changelog
 ---------------
 
 
+`v0.2.2`_ (2020-05-06)
+^^^^^^^^^^^^^^^^^^^^^^
+
+Bug Fixes
+"""""""""
+
+* netbox: adapt to new Netbox API
+
+  * Netbox API starting with Netbox 2.8.0 have removed the choices API endpoint. Adapt the handling of the device
+    status accordingly.
+
+
 `v0.2.1`_ (2020-04-30)
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -105,3 +117,4 @@ Miscellanea
 .. _`v0.1.1`: https://github.com/wikimedia/operations-software-homer/releases/tag/v0.1.1
 .. _`v0.2.0`: https://github.com/wikimedia/operations-software-homer/releases/tag/v0.2.0
 .. _`v0.2.1`: https://github.com/wikimedia/homer/releases/tag/v0.2.1
+.. _`v0.2.2`: https://github.com/wikimedia/homer/releases/tag/v0.2.2
