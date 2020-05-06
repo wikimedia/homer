@@ -100,12 +100,12 @@ class NetboxInventory:
         Arguments:
             api (pynetbox.api): the Netbox API instance.
             device_roles (list): a sequence of Netbox device role slug strings to filter the devices.
-            device_statuses (list): a sequence of Netbox device status label strings to filter the devices.
+            device_statuses (list): a sequence of Netbox device status label or value strings to filter the devices.
 
         """
         self._api = api
         self._device_roles = device_roles
-        self._device_statuses = self._get_statuses_ids(device_statuses)
+        self._device_statuses = [status.lower() for status in device_statuses]
 
     def get_devices(self) -> Dict[str, Dict[str, str]]:
         """Return all the devices based on configuration with their role and site.
@@ -169,19 +169,6 @@ class NetboxInventory:
             devices[fqdn] = NetboxInventory._get_device_data(device)
 
         return devices
-
-    def _get_statuses_ids(self, labels: Sequence[str]) -> List[int]:
-        """Convert a sequence of Netbox status labels into their IDs.
-
-        Arguments:
-            labels (list): a list of strings with the status labels.
-
-        Returns:
-            list: a list with the integer IDs corresponding to the status labels.
-
-        """
-        choices = {choice['label']: choice['value'] for choice in self._api.dcim.choices()['device:status']}
-        return [value for label, value in choices.items() if label in labels]
 
     @staticmethod
     def _get_device_data(device: pynetbox.models.dcim.Devices) -> Dict[str, str]:

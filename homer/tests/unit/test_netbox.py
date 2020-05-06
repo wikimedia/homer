@@ -29,8 +29,8 @@ def mock_netbox_device(name, role, site, status,  # pylint: disable=too-many-arg
     device.site = NetboxObject()
     device.site.slug = site
     device.status = NetboxObject()
-    device.status.value = status
-    device.status.label = str(status)
+    device.status.value = status.lower()
+    device.status.label = status
     device.device_type = NetboxObject()
     device.device_type.slug = 'typeA'
 
@@ -117,7 +117,7 @@ class TestNetboxDeviceData:
     def setup_method(self):
         """Initialize the test instances."""
         self.netbox_api = mock.MagicMock(specset=api)
-        netbox_device = mock_netbox_device('device1.example.com', 'role1', 'site1', 1)
+        netbox_device = mock_netbox_device('device1.example.com', 'role1', 'site1', 'Active')
         self.device = Device(netbox_device.name, {'netbox_object': netbox_device}, {}, {})
         self.netbox_data = NetboxDeviceData(self.netbox_api, self.device)
 
@@ -139,7 +139,7 @@ class TestNetboxDeviceData:
         devices = []
         names = ('device1.example.com', 'device2.example.com')
         for name in names:
-            netbox_device = mock_netbox_device(name, 'role1', 'site1', 1, virtual_chassis=True)
+            netbox_device = mock_netbox_device(name, 'role1', 'site1', 'Active', virtual_chassis=True)
             netbox_devices.append(netbox_device)
             devices.append(Device(netbox_device.name, {'netbox_object': netbox_device}, {}, {}))
 
@@ -160,29 +160,27 @@ class TestNetboxInventory:
         """Initialize the test instance."""
         # pylint: disable=attribute-defined-outside-init
         selected_devices = [
-            mock_netbox_device('device1', 'roleA', 'siteA', 1, ip4=True),
-            mock_netbox_device('device2', 'roleA', 'siteA', 3, ip6=True),
+            mock_netbox_device('device1', 'roleA', 'siteA', 'Active', ip4=True),
+            mock_netbox_device('device2', 'roleA', 'siteA', 'Staged', ip6=True),
         ]
         selected_vcs = [
-            mock_netbox_device('device1-vc1', 'roleA', 'siteA', 1),
+            mock_netbox_device('device1-vc1', 'roleA', 'siteA', 'Active'),
         ]
         filtered_devices = [
-            mock_netbox_device('device3', 'roleB', 'siteB', 1),
-            mock_netbox_device('device4', 'roleA', 'siteA', 1),
-            mock_netbox_device('device2', 'roleA', 'siteA', 3, platform=False),
+            mock_netbox_device('device3', 'roleB', 'siteB', 'Active'),
+            mock_netbox_device('device4', 'roleA', 'siteA', 'Active'),
+            mock_netbox_device('device2', 'roleA', 'siteA', 'Staged', platform=False),
         ]
         filtered_vcs = [
-            mock_netbox_device('device1-vc2', 'roleB', 'siteA', 1),
-            mock_netbox_device('device1-vc3', 'roleA', 'siteA', 9),
-            mock_netbox_device('', 'roleA', 'siteA', 1),
+            mock_netbox_device('device1-vc2', 'roleB', 'siteA', 'Active'),
+            mock_netbox_device('device1-vc3', 'roleA', 'siteA', 'Decommissioning'),
+            mock_netbox_device('', 'roleA', 'siteA', 'Active'),
         ]
         self.selected_devices = selected_devices + selected_vcs
         virtual_chassis = [mock_netbox_virtual_chassis(device, device.name) for device in selected_vcs + filtered_vcs]
         self.mocked_api = mock.MagicMock()
         self.mocked_api.dcim.virtual_chassis.all.return_value = virtual_chassis
         self.mocked_api.dcim.devices.filter.return_value = selected_devices + filtered_devices
-        self.mocked_api.dcim.choices.return_value = {'device:status': [
-            {'label': 'Active', 'value': 1}, {'label': 'Staged', 'value': 3}]}
         self.inventory = NetboxInventory(self.mocked_api, ['roleA'], ['Active', 'Staged'])
 
     def test_get_devices(self):
