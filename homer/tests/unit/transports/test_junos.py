@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 
-from jnpr.junos.exception import CommitError, RpcTimeoutError, UnlockError
+from jnpr.junos.exception import CommitError, ConfigLoadError, RpcTimeoutError, UnlockError
 from lxml import etree
 from ncclient.operations.errors import TimeoutExpiredError
 
@@ -114,13 +114,27 @@ class TestConnectedDevice:
         callback.assert_called_once_with('device1.example.com', 'diff')
         mocked_junos_device.return_value.cu.commit_check.assert_not_called()
 
-    def test_commit_prepare_failed(self, mocked_junos_device):
-        """It should raise HomerError if unable to prepare the commit."""
+    def test_commit_prepare_failed_load(self, mocked_junos_device):
+        """It should raise if unable to load the configuration."""
+        mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
+        mocked_junos_device.return_value.cu.load.side_effect = ConfigLoadError(
+            etree.XML(ERROR_RESPONSE.format(insert='')))
+        device = junos.ConnectedDevice(self.fqdn)
+        callback = mock.Mock()
+        with pytest.raises(ConfigLoadError):
+            device.commit('config', COMMIT_MESSAGE, callback)
+
+        callback.assert_not_called()
+        mocked_junos_device.return_value.cu.commit.assert_not_called()
+        mocked_junos_device.return_value.cu.rollback.assert_not_called()
+
+    def test_commit_prepare_failed_diff(self, mocked_junos_device):
+        """It should raise HomerError if unable to get the diff for the commit."""
         mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
         mocked_junos_device.return_value.cu.diff.side_effect = ValueError
         device = junos.ConnectedDevice(self.fqdn)
         callback = mock.Mock()
-        with pytest.raises(junos.JunosPrepareError, match='Failed to prepare the configuration on'):
+        with pytest.raises(ValueError):
             device.commit('config', COMMIT_MESSAGE, callback)
 
         callback.assert_not_called()
@@ -133,39 +147,26 @@ class TestConnectedDevice:
         device = junos.ConnectedDevice(self.fqdn)
         callback = mock.Mock()
         callback.side_effect = RuntimeError
-        with pytest.raises(HomerError, match='Failed to execute callback on'):
+        with pytest.raises(RuntimeError):
             device.commit('config', COMMIT_MESSAGE, callback)
 
         assert callback.called
         mocked_junos_device.return_value.cu.commit.assert_not_called()
 
-    def test_commit_commit_error(self, mocked_junos_device):
+    @pytest.mark.parametrize('insert, expected', (
+        ('', 'Commit error: Error Message'),
+        ('<ok/>', 'Commit error: CommitError'),
+    ))
+    def test_commit_commit_error(self, mocked_junos_device, insert, expected):
         """On CommitError it should raise HomerError with the error message from the CommitError."""
         mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
         mocked_junos_device.return_value.cu.diff.return_value = 'diff'
         mocked_junos_device.return_value.cu.commit.side_effect = CommitError(
-            etree.XML(ERROR_RESPONSE.format(insert='')))
+            etree.XML(ERROR_RESPONSE.format(insert=insert)))
         device = junos.ConnectedDevice(self.fqdn)
         callback = mock.Mock()
 
-        with pytest.raises(
-                HomerError, match='Failed to commit configuration on {fqdn}: Error Message'.format(fqdn=self.fqdn)):
-            device.commit('config', COMMIT_MESSAGE, callback)
-
-        callback.assert_called_once_with('device1.example.com', 'diff')
-        mocked_junos_device.return_value.cu.commit.assert_called_once_with(confirm=2, comment=COMMIT_MESSAGE)
-
-    def test_commit_commit_error_unknown(self, mocked_junos_device):
-        """On CommitError it should raise HomerError with the CommitError message if unable to parse it."""
-        mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
-        mocked_junos_device.return_value.cu.diff.return_value = 'diff'
-        mocked_junos_device.return_value.cu.commit.side_effect = CommitError(
-            etree.XML(ERROR_RESPONSE.format(insert='<ok/>')))
-        device = junos.ConnectedDevice(self.fqdn)
-        callback = mock.Mock()
-
-        with pytest.raises(
-                HomerError, match='Failed to commit configuration on {fqdn}: CommitError'.format(fqdn=self.fqdn)):
+        with pytest.raises(HomerError, match=expected):
             device.commit('config', COMMIT_MESSAGE, callback)
 
         callback.assert_called_once_with('device1.example.com', 'diff')
@@ -179,7 +180,7 @@ class TestConnectedDevice:
         device = junos.ConnectedDevice(self.fqdn)
         callback = mock.Mock()
 
-        with pytest.raises(HomerError, match=r'Failed to commit configuration on {fqdn}$'.format(fqdn=self.fqdn)):
+        with pytest.raises(ValueError):
             device.commit('config', COMMIT_MESSAGE, callback)
 
         callback.assert_called_once_with('device1.example.com', 'diff')
@@ -210,7 +211,7 @@ class TestConnectedDevice:
 
         assert not success
         assert diff == 'diff'
-        assert 'Failed to commit check configuration on {fqdn}: Error Message'.format(fqdn=self.fqdn) in caplog.text
+        assert 'Commit check error on {fqdn}: Error Message'.format(fqdn=self.fqdn) in caplog.text
         mocked_junos_device.return_value.cu.commit_check.assert_called_once_with()
         mocked_junos_device.return_value.cu.rollback.assert_called_once_with()
 
@@ -225,7 +226,7 @@ class TestConnectedDevice:
 
         assert not success
         assert diff == 'diff'
-        assert 'Failed to commit check configuration on {fqdn}: Error Message'.format(fqdn=self.fqdn) in caplog.text
+        assert 'Failed to commit check on {fqdn}: Error Message'.format(fqdn=self.fqdn) in caplog.text
         mocked_junos_device.return_value.cu.commit_check.assert_called_once_with()
         mocked_junos_device.return_value.cu.rollback.assert_called_once_with()
 

@@ -6,7 +6,7 @@ import sys
 
 from collections import defaultdict
 from importlib import import_module
-from typing import Callable, DefaultDict, Dict, List, Mapping, Tuple
+from typing import Callable, DefaultDict, Dict, List, Mapping, Optional, Tuple
 
 import pynetbox
 
@@ -118,8 +118,10 @@ class Homer:
         successes, diffs = self._execute(self._device_diff, query)
         has_diff = False
         for diff, diff_devices in diffs.items():
-            print('Diff for {n} devices: {devices}'.format(n=len(diff_devices), devices=diff_devices))
-            if not diff:
+            print('Changes for {n} devices: {devices}'.format(n=len(diff_devices), devices=diff_devices))
+            if diff is None:
+                print('# Failed')
+            elif not diff:
                 print('# No diff')
             else:
                 has_diff = True
@@ -150,7 +152,7 @@ class Homer:
         successes, _ = self._execute(self._device_commit, query, message=message)
         return Homer._parse_results(successes)
 
-    def _device_generate(self, device: Device, device_config: str, _: int) -> Tuple[bool, str]:
+    def _device_generate(self, device: Device, device_config: str, _: int) -> Tuple[bool, Optional[str]]:
         """Save the generated configuration in a local file.
 
         Arguments:
@@ -160,7 +162,7 @@ class Homer:
 
         Returns:
             tuple: a two-element tuple with a boolean as first parameter that represent the success of the operation
-            or not and a second element with a string that is not used but is required by the callback API.
+            or not and a second element with a string or None that is not used but is required by the callback API.
 
         """
         output_path = self._output_base_path / '{fqdn}{out}'.format(fqdn=device.fqdn, out=Homer.OUT_EXTENSION)
@@ -168,10 +170,10 @@ class Homer:
             f.write(device_config)
             logger.info('Written configuration for %s in %s', device.fqdn, output_path)
 
-        return True, ''
+        return True, None
 
     def _device_diff(self, device: Device, device_config: str,
-                     _: int) -> Tuple[bool, str]:  # pylint: disable=no-self-use
+                     _: int) -> Tuple[bool, Optional[str]]:  # pylint: disable=no-self-use
         """Perform a configuration diff between the generated configuration and the live one.
 
         Arguments:
@@ -181,15 +183,16 @@ class Homer:
 
         Returns:
             tuple: a two-element tuple with a boolean as first parameter that represent the success of the operation
-            or not and a second element with a string that contains the configuration differences.
+            or not and a second element with a string that contains the configuration differences or None if unable
+            to load the new configuration in the device to generate the diff.
 
         """
         with connected_device(device.fqdn, username=self._transport_username,
                               ssh_config=self._transport_ssh_config) as connection:
             return connection.commit_check(device_config, self._ignore_warning)
 
-    def _device_commit(self, device: Device, device_config: str, attempt: int, *,  # pylint: disable=no-self-use
-                       message: str = '-') -> Tuple[bool, str]:
+    def _device_commit(self, device: Device, device_config: str,  # noqa: MC0001; pylint: disable=no-self-use
+                       attempt: int, *, message: str = '-') -> Tuple[bool, Optional[str]]:
         """Commit a new configuration to the device.
 
         Arguments:
@@ -203,7 +206,7 @@ class Homer:
 
         Returns:
             tuple: a two-element tuple with a boolean as first parameter that represent the success of the operation
-            or not and a second element with a string that contains the configuration differences.
+            or not and a second element with a string or None that is not used but is required by the callback API.
 
         """
         def callback(fqdn: str, diff: str) -> None:
@@ -235,12 +238,13 @@ class Homer:
                 return True, ''
             except HomerTimeoutError:
                 raise  # To be catched later for automatic retry
-            except HomerError as e:
-                if e.__class__ is HomerAbortError:
-                    logger.warning('%s on %s', e, device.fqdn)
-                else:
-                    logger.exception('Failed to commit on %s', device.fqdn)
-                return False, ''
+            except HomerAbortError as e:
+                logger.warning('%s on %s', e, device.fqdn)
+            except Exception as e:  # pylint: disable=broad-except
+                logger.error('Failed to commit on %s: %s', device.fqdn, e)
+                logger.debug('Traceback:', exc_info=True)
+
+            return False, ''
 
     def _prepare_out_dir(self) -> None:
         """Prepare the out directory creating the directory if doesn't exists and deleting any pre-generated file."""

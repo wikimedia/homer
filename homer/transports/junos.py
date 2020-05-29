@@ -5,11 +5,11 @@ from contextlib import contextmanager
 from typing import Callable, Iterator, List, Optional, Tuple, Union
 
 from jnpr.junos import Device as JunOSDevice
-from jnpr.junos.exception import CommitError, RpcTimeoutError, UnlockError
+from jnpr.junos.exception import CommitError, ConfigLoadError, RpcTimeoutError, UnlockError
 from jnpr.junos.utils.config import Config
 from ncclient.operations.errors import TimeoutExpiredError
 
-from homer.exceptions import HomerAbortError, HomerError, HomerTimeoutError
+from homer.exceptions import HomerError, HomerTimeoutError
 
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
@@ -33,10 +33,6 @@ def connected_device(fqdn: str, *, username: str = '', ssh_config: Optional[str]
         yield device
     finally:
         device.close()
-
-
-class JunosPrepareError(HomerError):
-    """Exception raised when it fails to load and diff the configuration on the device."""
 
 
 # pylint: disable=no-member
@@ -76,7 +72,9 @@ class ConnectedDevice:
                 diff is empty.
 
         Raises:
-            HomerError: when failing to commit the configuration.
+            HomerTimeoutError: on timeout.
+            HomerError: on commit error.
+            Exception: on generic failure.
 
         """
         diff = self._prepare(config, ignore_warning)
@@ -87,12 +85,9 @@ class ConnectedDevice:
         else:
             try:
                 callback(self._fqdn, diff)
-            except HomerAbortError:
+            except Exception:
                 self._rollback()
                 raise
-            except Exception as e:  # pylint: disable=broad-except
-                self._rollback()
-                raise HomerError('Failed to execute callback on {fqdn}'.format(fqdn=self._fqdn)) from e
 
         logger.info('Committing the configuration on %s', self._fqdn)
         try:
@@ -102,12 +97,10 @@ class ConnectedDevice:
         except RpcTimeoutError as e:
             raise HomerTimeoutError(str(e))
         except CommitError as e:
-            raise HomerError('Failed to commit configuration on {fqdn}: {reason}'.format(
-                fqdn=self._fqdn, reason=ConnectedDevice._parse_commit_error(e))) from e
-        except Exception as e:
-            raise HomerError('Failed to commit configuration on {fqdn}'.format(fqdn=self._fqdn)) from e
+            raise HomerError('Commit error: {err}'.format(err=ConnectedDevice._parse_commit_error(e))) from e
 
-    def commit_check(self, config: str, ignore_warning: Union[bool, str, List[str]] = False) -> Tuple[bool, str]:
+    def commit_check(self, config: str,
+                     ignore_warning: Union[bool, str, List[str]] = False) -> Tuple[bool, Optional[str]]:
         """Perform commit check, reuturn the diff and rollback.
 
         Arguments:
@@ -116,11 +109,18 @@ class ConnectedDevice:
         Returns:
             tuple: a two-element tuple with a boolean as first item that is :py:data:`True` on success and
             :py:data:`False` on failure and a string as second item with the difference between the current
-            configuration and the new one or an empty string on failure.
+            configuration and the new one, empty string on no diff and :py:data:`None` on failure.
 
         """
         success = False
-        diff = self._prepare(config, ignore_warning)
+        try:
+            diff = self._prepare(config, ignore_warning)
+        except Exception as e:  # pylint: disable=broad-except
+            logger.error('Failed to get diff for %s: %s', self._fqdn, e)
+            logger.debug('Traceback:', exc_info=True)
+            self._rollback()
+            return False, None
+
         if not diff:
             logger.info('Empty diff for %s, skipping device.', self._fqdn)
             self._rollback()
@@ -131,11 +131,10 @@ class ConnectedDevice:
             self._device.cu.commit_check()
             success = True
         except CommitError as e:
-            logger.error('Failed to commit check configuration on %s: %s',
-                         self._fqdn, ConnectedDevice._parse_commit_error(e))
+            logger.error('Commit check error on %s: %s', self._fqdn, ConnectedDevice._parse_commit_error(e))
         except Exception as e:  # pylint: disable=broad-except
-            logger.error('Failed to commit check configuration on %s: %s', self._fqdn, e)
-            logger.debug('Full stacktrace', exc_info=True)
+            logger.error('Failed to commit check on %s: %s', self._fqdn, e)
+            logger.debug('Traceback:', exc_info=True)
         finally:
             self._rollback()
 
@@ -159,7 +158,7 @@ class ConnectedDevice:
             config (str): the device new configuration.
 
         Raises:
-            JunosPrepareError: on failure.
+            Exception: on generic failure.
 
         Returns:
             str: the differences between the current config and the new one.
@@ -171,9 +170,11 @@ class ConnectedDevice:
             self._device.cu.lock()
             self._device.cu.load(config, format='text', merge=False, ignore_warning=ignore_warning)
             diff = self._device.cu.diff()
-        except Exception as e:
+        except ConfigLoadError:
+            raise
+        except Exception:
             self._rollback()
-            raise JunosPrepareError('Failed to prepare the configuration on {fqdn}'.format(fqdn=self._fqdn)) from e
+            raise
 
         if diff is None:
             diff = ''

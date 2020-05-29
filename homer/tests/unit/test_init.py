@@ -5,13 +5,14 @@ from unittest import mock
 
 import pytest
 
-from jnpr.junos.exception import RpcTimeoutError
+from jnpr.junos.exception import ConfigLoadError, RpcTimeoutError
+from lxml import etree
 
 import homer
 
-from homer import Homer
 from homer.config import load_yaml_config
 from homer.tests import get_fixture_path
+from homer.tests.unit.transports.test_junos import ERROR_RESPONSE
 
 
 def setup_tmp_path(file_name, path):
@@ -26,7 +27,7 @@ def setup_tmp_path(file_name, path):
 def get_generated_files(path):
     """Get all the generated files in the output directory."""
     return [out_file.name for out_file in path.iterdir()
-            if out_file.is_file() and out_file.suffix == Homer.OUT_EXTENSION]
+            if out_file.is_file() and out_file.suffix == homer.Homer.OUT_EXTENSION]
 
 
 def test_version():
@@ -42,11 +43,11 @@ class TestHomer:
         """Initialize the instance."""
         # pylint: disable=attribute-defined-outside-init
         self.output, self.config = setup_tmp_path('config.yaml', tmp_path)
-        self.homer = Homer(self.config)
+        self.homer = homer.Homer(self.config)
 
     def test_generate_ok(self):
         """It should generate the compiled configuration files for the matching devices."""
-        spurious_file = self.output / 'spurious{suffix}'.format(suffix=Homer.OUT_EXTENSION)
+        spurious_file = self.output / 'spurious{suffix}'.format(suffix=homer.Homer.OUT_EXTENSION)
         spurious_file.touch()  # To check that the file will be removed
         spurious_dir = self.output / 'spurious'
         spurious_dir.mkdir()
@@ -76,7 +77,7 @@ class TestHomer:
         config = self.config.copy()
         del config['base_paths']['private']
 
-        ret = Homer(config).generate('device*')
+        ret = homer.Homer(config).generate('device*')
 
         assert ret == 0
         assert sorted(get_generated_files(self.output)) == ['device1.example.com.out', 'device2.example.com.out']
@@ -116,6 +117,18 @@ class TestHomer:
         assert mocked_device.return_value.cu.diff.called
         assert expected in out
 
+    @mock.patch('homer.transports.junos.JunOSDevice')
+    def test_execute_diff_raise(self, mocked_device, capsys, caplog):
+        """It should skip the device that raises an HomerLoadError."""
+        mocked_device.return_value.cu.load.side_effect = ConfigLoadError(
+            etree.XML(ERROR_RESPONSE.format(insert='')))
+        return_code = self.homer.diff('device1*')
+
+        out, _ = capsys.readouterr()
+        assert return_code == 1
+        assert 'Failed to get diff for device1.example.com: ConfigLoadError(' in caplog.text
+        assert "Changes for 1 devices: ['device1.example.com']\n# Failed" in out
+
     @mock.patch('builtins.input')
     @mock.patch('homer.sys.stdout.isatty')
     @mock.patch('homer.transports.junos.JunOSDevice')
@@ -141,6 +154,33 @@ class TestHomer:
         assert ret == 1
         assert 'Commit attempt 3/3 failed' in caplog.text
 
+    @mock.patch('builtins.input')
+    @mock.patch('homer.sys.stdout.isatty')
+    @mock.patch('homer.transports.junos.JunOSDevice')
+    @pytest.mark.parametrize('input_value, expected', (
+        ('no', 'Commit aborted'),
+        ('invalid', 'Too many invalid answers, commit aborted'),
+    ))  # pylint: disable=too-many-arguments
+    def test_execute_commit_abort(self, mocked_device, mocked_isatty, mocked_input, input_value, expected, caplog):
+        """It should skip a device and log a warning if the commit is aborted."""
+        message = 'commit message'
+        mocked_isatty.return_value = True
+        mocked_input.return_value = input_value
+        ret = self.homer.commit('device*', message=message)
+        assert ret == 1
+        assert expected in caplog.text
+        mocked_device.return_value.cu.commit.assert_not_called()
+
+    @mock.patch('homer.sys.stdout.isatty')
+    @mock.patch('homer.transports.junos.JunOSDevice')
+    def test_execute_commit_notty(self, mocked_device, mocked_isatty, caplog):
+        """It should skip a device and log a warning if the commit is aborted."""
+        mocked_isatty.return_value = False
+        ret = self.homer.commit('device*', message='commit message')
+        assert ret == 1
+        assert 'Not in a TTY, unable to ask for confirmation' in caplog.text
+        mocked_device.return_value.cu.commit.assert_not_called()
+
 
 class TestHomerNetbox:
     """Homer class tests with Netbox enabled."""
@@ -152,7 +192,7 @@ class TestHomerNetbox:
         # pylint: disable=attribute-defined-outside-init
         self.output, self.config = setup_tmp_path('config-netbox.yaml', tmp_path)
         self.mocked_pynetbox = mocked_pynetbox
-        self.homer = Homer(self.config)
+        self.homer = homer.Homer(self.config)
 
     def test_init(self):
         """The instance should have setup the Netbox API."""
