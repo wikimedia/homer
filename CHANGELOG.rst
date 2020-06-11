@@ -2,6 +2,21 @@ Homer Changelog
 ---------------
 
 
+`v0.2.3`_ (2020-06-11)
+^^^^^^^^^^^^^^^^^^^^^^
+
+Minor improvements
+""""""""""""""""""
+
+* Improve error catching (`T253795`_).
+
+  * For the diff action catch all the errors directly in the transport in order to return a consistent success and
+    diff result for each device, skipping as a result those with failure. In case of failure return ``None`` so that
+    it can be distinguished from an empty diff and reported as such both in logging and in the output.
+  * For the commit action let the exceptions raise in the transport and be catched and logged in the main ``Homer``
+    class with the same effective result that any failing device is skipped without interrupting the whole run.
+  * In both cases log also the traceback when the debug logging is enabled.
+
 `v0.2.2`_ (2020-05-06)
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -112,9 +127,11 @@ Miscellanea
 .. _`T244362`: https://phabricator.wikimedia.org/T244362
 .. _`T244363`: https://phabricator.wikimedia.org/T244363
 .. _`T249224`: https://phabricator.wikimedia.org/T249224
+.. _`T253795`: https://phabricator.wikimedia.org/T253795
 
 .. _`v0.1.0`: https://github.com/wikimedia/operations-software-homer/releases/tag/v0.1.0
 .. _`v0.1.1`: https://github.com/wikimedia/operations-software-homer/releases/tag/v0.1.1
 .. _`v0.2.0`: https://github.com/wikimedia/operations-software-homer/releases/tag/v0.2.0
 .. _`v0.2.1`: https://github.com/wikimedia/homer/releases/tag/v0.2.1
 .. _`v0.2.2`: https://github.com/wikimedia/homer/releases/tag/v0.2.2
+.. _`v0.2.3`: https://github.com/wikimedia/homer/releases/tag/v0.2.3
