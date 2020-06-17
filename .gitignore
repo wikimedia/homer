@@ -9,7 +9,7 @@
 /.tox/
 /dist/
 /doc/build/
-/plugins
+/homer_plugins
 /*.egg-info/
 __pycache__/
 *.pyc
