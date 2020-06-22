@@ -2,6 +2,16 @@ Homer Changelog
 ---------------
 
 
+`v0.2.4`_ (2020-06-22)
+^^^^^^^^^^^^^^^^^^^^^^
+
+Miscellanea
+"""""""""""
+
+* Packaging: define a standard ``homer_plugins`` name for the external plugins and explicitely exclude them from the
+  PyPI packaging.
+* Removed support for Python version 3.5 and 3.6.
+
 `v0.2.3`_ (2020-06-11)
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -135,3 +145,4 @@ Miscellanea
 .. _`v0.2.1`: https://github.com/wikimedia/homer/releases/tag/v0.2.1
 .. _`v0.2.2`: https://github.com/wikimedia/homer/releases/tag/v0.2.2
 .. _`v0.2.3`: https://github.com/wikimedia/homer/releases/tag/v0.2.3
+.. _`v0.2.4`: https://github.com/wikimedia/homer/releases/tag/v0.2.4
