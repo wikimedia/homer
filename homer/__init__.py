@@ -76,7 +76,7 @@ class Homer:
             for data in devices.values():
                 data.pop('config', None)
 
-        private_devices_config = {}  # type: dict
+        private_devices_config: Dict = {}
         if private_base_path:
             private_devices_config = load_yaml_config(
                 os.path.join(private_base_path, 'config', 'devices.yaml'))
@@ -268,8 +268,8 @@ class Homer:
             configuration differences and as values the list of device FQDN that reported that diff.
 
         """
-        diffs = defaultdict(list)  # type: defaultdict
-        successes = {True: [], False: []}  # type: dict
+        diffs: DefaultDict[str, list] = defaultdict(list)
+        successes: Dict[bool, list] = {True: [], False: []}
         netbox_data = None
         if self._netbox_api is not None:
             logger.info('Gathering global Netbox data')

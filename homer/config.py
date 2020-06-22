@@ -85,7 +85,7 @@ def load_yaml_config(config_file: str) -> Dict:
     yaml.SafeLoader.add_constructor("!ip_address", ip_address_constructor)
     yaml.SafeLoader.add_implicit_resolver('!ip_address', ip_re, None)
 
-    config = {}  # type: Dict
+    config: Dict = {}
     if not os.path.exists(config_file):
         return config
 
@@ -119,7 +119,7 @@ class HierarchicalConfig:
                 configuration files cannot have top level keys in common with the public configuration.
 
         """
-        self._configs = {}  # type: Dict[str, Dict]
+        self._configs: Dict[str, Dict] = {}
         paths = {'public': base_path, 'private': private_base_path}
         for path, name in itertools.product(paths.keys(), ('common', 'roles', 'sites')):
             if paths[path]:

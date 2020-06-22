@@ -125,7 +125,7 @@ class NetboxInventory:
             dict: a dictionary with the device FQDN as keys and a metadata dictionary as value.
 
         """
-        devices = {}  # type: Dict[str, Dict[str, str]]
+        devices: Dict[str, Dict[str, str]] = {}
         for vc in self._api.dcim.virtual_chassis.all():
             device = vc.master
             if not vc.domain:
@@ -152,7 +152,7 @@ class NetboxInventory:
             dict: a dictionary with the device FQDN as keys and a metadata dictionary as value.
 
         """
-        devices = {}  # type: Dict[str, Dict[str, str]]
+        devices: Dict[str, Dict[str, str]] = {}
         for device in self._api.dcim.devices.filter(
                 role=self._device_roles, status=self._device_statuses, virtual_chassis_member=False):
             if device.primary_ip4 is not None and device.primary_ip4.dns_name:
