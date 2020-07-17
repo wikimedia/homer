@@ -12,6 +12,7 @@ class Whitelist:
 whitelist_tests = Whitelist()
 whitelist_tests.unit.test_devices.TestDevices.setup_method
 whitelist_tests.unit.test_devices.TestDevices.setup_method_fixture
+whitelist_tests.unit.test_netbox.TestBaseNetboxData.netbox_data._get_key_raise
 whitelist_tests.unit.test_config.test_uncopiable_object.Uncopiable.__deepcopy__
 whitelist_tests.fixtures.plugins.plugin.NetboxDeviceDataPlugin._get_netbox_device_plugin
 

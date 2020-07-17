@@ -8,6 +8,7 @@ import pytest
 from pynetbox import api
 
 from homer.devices import Device
+from homer.exceptions import HomerError
 from homer.netbox import BaseNetboxData, NetboxData, NetboxDeviceData, NetboxInventory
 
 
@@ -79,6 +80,11 @@ class TestBaseNetboxData:
         self.netbox_api = mock.MagicMock(specset=api)
         self.netbox_data = BaseNetboxData(self.netbox_api)
 
+        def key_raise():
+            raise RuntimeError('key raise')
+
+        self.netbox_data._get_key_raise = key_raise  # pylint: disable=protected-access
+
     def test_init(self):
         """An instance of BaseNetboxData should be also an instance of UserDict."""
         assert isinstance(self.netbox_data, BaseNetboxData)
@@ -88,6 +94,11 @@ class TestBaseNetboxData:
         """Should raise KeyError if there is no method for that key."""
         with pytest.raises(KeyError, match='key1'):
             self.netbox_data['key1']  # pylint: disable=pointless-statement
+
+    def test_getitem_raise(self):
+        """Should raise HomerError if the call to the key raise any exception."""
+        with pytest.raises(HomerError, match='Failed to get key key_raise'):
+            self.netbox_data['key_raise']  # pylint: disable=pointless-statement
 
 
 class TestNetboxData:

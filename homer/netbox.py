@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional, Sequence
 import pynetbox
 
 from homer.devices import Device
+from homer.exceptions import HomerError
 
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
@@ -41,7 +42,11 @@ class BaseNetboxData(UserDict):  # pylint: disable=too-many-ancestors
             raise KeyError(key)
 
         if key not in self.data:
-            self.data[key] = getattr(self, method_name)()
+            try:
+                self.data[key] = getattr(self, method_name)()
+            except Exception as e:
+                raise HomerError('Failed to get key {key}'.format(key=key)) from e
+
         return self.data[key]
 
 
