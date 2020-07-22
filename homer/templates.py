@@ -15,16 +15,22 @@ logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 class Renderer:
     """Load and render templates."""
 
-    def __init__(self, base_path: str):
+    def __init__(self, base_path: str, base_private_path: str = ''):
         """Initialize the instance.
 
         Arguments:
             base_path (str): the base path to initialize the Jinja2 environment with. All templates path must be
                 relative to this base path.
+            base_private_path (str, optional): a secondary base path to initialize the Jinja2 environment with.
+                Templates that are not found in base_path will be looked up in this secondary private location.
 
         """
+        paths = [os.path.join(base_path, 'templates')]
+        if base_private_path:
+            paths.append(os.path.join(base_private_path, 'templates'))
+
         self._env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(os.path.join(base_path, 'templates')),
+            loader=jinja2.FileSystemLoader(paths),
             undefined=jinja2.StrictUndefined,
             trim_blocks=True,
             lstrip_blocks=True,

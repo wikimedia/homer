@@ -85,7 +85,7 @@ class Homer:
         self._transport_username = self._main_config.get('transports', {}).get('username', '')
         self._transport_ssh_config = self._main_config.get('transports', {}).get('ssh_config', None)
         self._devices = Devices(devices, devices_config, private_devices_config)
-        self._renderer = Renderer(self._main_config['base_paths']['public'])
+        self._renderer = Renderer(self._main_config['base_paths']['public'], private_base_path)
         self._output_base_path = pathlib.Path(self._main_config['base_paths']['output'])
 
     def generate(self, query: str) -> int:

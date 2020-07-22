@@ -12,7 +12,7 @@ class TestRenderer:
     def setup_method(self):
         """Initialize the test instances."""
         # pylint: disable=attribute-defined-outside-init
-        self.renderer = Renderer(get_fixture_path('templates'))
+        self.renderer = Renderer(get_fixture_path('templates'), '')
 
     def test_render_ok(self):
         """Should return the rendered template."""
