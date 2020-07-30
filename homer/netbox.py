@@ -95,6 +95,31 @@ class NetboxDeviceData(BaseNetboxDeviceData):  # pylint: disable=too-many-ancest
         vc_id = self._device.metadata['netbox_object'].virtual_chassis.id
         return [dict(i) for i in self._api.dcim.devices.filter(virtual_chassis_id=vc_id)]
 
+    def _get_circuits(self) -> Optional[Dict[str, Dict[str, Any]]]:
+        """Returns a list of circuits connected to the device.
+
+        Returns:
+            list: A list of circuits.
+
+        """
+        # Because of changes documented in https://github.com/netbox-community/netbox/issues/4812
+        # if an interface is connected to another device using a circuit, the circuit doesn't show up
+        device_id = self._device.metadata['netbox_object'].id
+        # Only get the circuits terminating where the device is
+        circuits = {}
+
+        # We get all the cables connected to a device
+        for cable in self._api.dcim.cables.filter(device_id=device_id):
+            # And if one side is a circuit we store it, with the local interface name as key
+            if cable.termination_a_type == 'circuits.circuittermination':
+                circuits[cable.termination_b.name] = dict(self._api.circuits.circuits.get(
+                    cable.termination_a.circuit.id))
+            elif cable.termination_b_type == 'circuits.circuittermination':
+                circuits[cable.termination_a.name] = dict(self._api.circuits.circuits.get(
+                    cable.termination_b.circuit.id))
+
+        return circuits
+
 
 class NetboxInventory:
     """Use Netbox as inventory to gather the list of devices to manage."""
