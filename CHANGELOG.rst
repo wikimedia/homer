@@ -2,6 +2,32 @@ Homer Changelog
 ---------------
 
 
+`v0.2.5`_ (2020-08-13)
+^^^^^^^^^^^^^^^^^^^^^^
+
+Minor improvements
+""""""""""""""""""
+
+* netbox: make Netbox errors surface through Jinja:
+
+  * When an error in the calls to Netbox API occurs it currently gets swallowed by Jinja behing an ``UndefinedError``.
+  * Make it explicitely raise an ``HomerError`` that gets correctly reported from Jinja showing the original traceback,
+    needed for debug.
+
+* templates: add support for private templates:
+
+  * Tell Jinja2 to load templates also from the private path if it's set, to enable the support for private templates
+    or subtemplates.
+
+* netbox: add circuits support:
+
+  * Pulls all the cables terminating on the target device to then find the circuits attached to those cables.
+
+Miscellanea
+"""""""""""
+* setup.py: add upper limit to prospector version
+
+
 `v0.2.4`_ (2020-06-22)
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -146,3 +172,4 @@ Miscellanea
 .. _`v0.2.2`: https://github.com/wikimedia/homer/releases/tag/v0.2.2
 .. _`v0.2.3`: https://github.com/wikimedia/homer/releases/tag/v0.2.3
 .. _`v0.2.4`: https://github.com/wikimedia/homer/releases/tag/v0.2.4
+.. _`v0.2.5`: https://github.com/wikimedia/homer/releases/tag/v0.2.5
