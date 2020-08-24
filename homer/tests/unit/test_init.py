@@ -147,6 +147,7 @@ class TestHomer:
     def test_execute_commit_timeout(self, mocked_device, mocked_isatty, mocked_input, caplog):
         """It should retry TIMEOUT_ATTEMPTS times and report the failure."""
         message = 'commit message'
+        mocked_device.return_value.cu.diff.return_value = 'diff'
         mocked_device.return_value.cu.commit.side_effect = RpcTimeoutError(mocked_device, message, 30)
         mocked_isatty.return_value = True
         mocked_input.return_value = 'yes'
@@ -166,6 +167,7 @@ class TestHomer:
         message = 'commit message'
         mocked_isatty.return_value = True
         mocked_input.return_value = input_value
+        mocked_device.return_value.cu.diff.return_value = 'diff'
         ret = self.homer.commit('device*', message=message)
         assert ret == 1
         assert expected in caplog.text
@@ -176,6 +178,7 @@ class TestHomer:
     def test_execute_commit_notty(self, mocked_device, mocked_isatty, caplog):
         """It should skip a device and log a warning if the commit is aborted."""
         mocked_isatty.return_value = False
+        mocked_device.return_value.cu.diff.return_value = 'diff'
         ret = self.homer.commit('device*', message='commit message')
         assert ret == 1
         assert 'Not in a TTY, unable to ask for confirmation' in caplog.text

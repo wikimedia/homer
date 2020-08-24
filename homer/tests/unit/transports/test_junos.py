@@ -29,6 +29,22 @@ ERROR_RESPONSE = """
     </load-configuration-results>
     </rpc-reply>
 """
+GENERATED_DIFF = """
+[edit test-block1]
+-     removed-line 1;
++     added-line 2;
+[edit test-block2]
+     term block1 { ... }
+!    term block2 { ... }
+"""
+EXPECTED_DIFF = """
+[edit test-block1]
+\x1b[31m-     removed-line 1;\x1b[39m
+\x1b[32m+     added-line 2;\x1b[39m
+[edit test-block2]
+     term block1 { ... }
+\x1b[33m!    term block2 { ... }\x1b[39m
+"""
 
 
 @mock.patch('homer.transports.junos.ConnectedDevice', autospec=True)
@@ -55,6 +71,17 @@ class TestConnectedDevice:
         """It should connect to the device."""
         junos.ConnectedDevice(self.fqdn)
         mocked_junos_device.assert_called_once_with(host=self.fqdn, user='', port=22, ssh_config=None)
+
+    def test_diff_ok(self, mocked_junos_device):
+        """It should print a colored diff of the config."""
+        mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
+        mocked_junos_device.return_value.cu.diff.return_value = GENERATED_DIFF
+        device = junos.ConnectedDevice(self.fqdn)
+
+        success, diff = device.commit_check('config')
+
+        assert success
+        assert diff == EXPECTED_DIFF
 
     def test_commit_ok(self, mocked_junos_device):
         """It should commit the new config."""

@@ -13,6 +13,9 @@ from homer.exceptions import HomerError, HomerTimeoutError
 
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+DIFF_ADDED_CODE = 32
+DIFF_REMOVED_CODE = 31
+DIFF_MOVED_CODE = 33
 
 
 @contextmanager
@@ -179,7 +182,7 @@ class ConnectedDevice:
         if diff is None:
             diff = ''
 
-        return diff
+        return color_diff(diff)
 
     def _rollback(self) -> None:
         """Rollback the current staged configuration."""
@@ -203,3 +206,28 @@ class ConnectedDevice:
         if exc.rsp.find('.//ok') is None:
             return exc.rsp.findtext('.//error-message')
         return str(exc)
+
+
+def color_diff(diff: str) -> str:
+    """Color the diff based on JunOS diff syntax."""
+    lines = []
+    for line in diff.splitlines():
+        if line.startswith('+'):
+            code = DIFF_ADDED_CODE
+        elif line.startswith('-'):
+            code = DIFF_REMOVED_CODE
+        elif line.startswith('!'):
+            code = DIFF_MOVED_CODE
+        else:
+            code = 0
+
+        if code:
+            line = '\x1b[{code}m{line}\x1b[39m'.format(code=code, line=line)
+
+        lines.append(line)
+
+    colored_diff = '\n'.join(lines)
+    if diff and diff[-1] == '\n':  # Re-add the last trailing newline if present
+        colored_diff += '\n'
+
+    return colored_diff
