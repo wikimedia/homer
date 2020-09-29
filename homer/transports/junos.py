@@ -191,6 +191,9 @@ class ConnectedDevice:
             self._device.cu.rollback()
         except ValueError as e:
             logger.error('Invalid rollback ID on %s: %s', self._fqdn, e)
+        except Exception as e:  # pylint: disable=broad-except
+            logger.error('Failed to rollback on %s: %s', self._fqdn, e)
+            logger.debug('Traceback:', exc_info=True)
 
     @staticmethod
     def _parse_commit_error(exc: CommitError) -> str:

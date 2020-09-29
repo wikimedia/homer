@@ -257,8 +257,8 @@ class TestConnectedDevice:
         mocked_junos_device.return_value.cu.commit_check.assert_called_once_with()
         mocked_junos_device.return_value.cu.rollback.assert_called_once_with()
 
-    def test_commit_check_rollback_error(self, mocked_junos_device, caplog):
-        """It should log any rollback error."""
+    def test_commit_check_rollback_value_error(self, mocked_junos_device, caplog):
+        """It should log any rollback ValueError exception."""
         mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
         mocked_junos_device.return_value.cu.diff.return_value = 'diff'
         mocked_junos_device.return_value.cu.rollback.side_effect = ValueError(50)
@@ -269,6 +269,22 @@ class TestConnectedDevice:
         assert success
         assert diff == 'diff'
         assert 'Invalid rollback ID on {fqdn}: 50'.format(fqdn=self.fqdn) in caplog.text
+        mocked_junos_device.return_value.cu.commit_check.assert_called_once_with()
+        mocked_junos_device.return_value.cu.rollback.assert_called_once_with()
+
+    def test_commit_check_rollback_error(self, mocked_junos_device, caplog):
+        """It should log any rollback generic error."""
+        mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
+        mocked_junos_device.return_value.cu.diff.return_value = 'diff'
+        mocked_junos_device.return_value.cu.rollback.side_effect = RpcTimeoutError(
+            mocked_junos_device, 'load-configuration', 30)
+        device = junos.ConnectedDevice(self.fqdn)
+
+        success, diff = device.commit_check('config')
+
+        assert success
+        assert diff == 'diff'
+        assert 'Failed to rollback on {fqdn}: RpcTimeoutError'.format(fqdn=self.fqdn) in caplog.text
         mocked_junos_device.return_value.cu.commit_check.assert_called_once_with()
         mocked_junos_device.return_value.cu.rollback.assert_called_once_with()
 
