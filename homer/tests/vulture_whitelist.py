@@ -23,6 +23,7 @@ whitelist_netbox = Whitelist()
 whitelist_netbox.NetboxData._get_vlans
 whitelist_netbox.NetboxDeviceData._get_virtual_chassis_members
 whitelist_netbox.NetboxDeviceData._get_circuits
+whitelist_netbox.NetboxDeviceData._get_inventory
 
 # Needed for vulture < 0.27
 whitelist_mock = Whitelist()

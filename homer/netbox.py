@@ -120,6 +120,16 @@ class NetboxDeviceData(BaseNetboxDeviceData):  # pylint: disable=too-many-ancest
 
         return circuits
 
+    def _get_inventory(self) -> Optional[List[Dict[Any, Any]]]:
+        """Returns the list of inventory items on the device.
+
+        Returns:
+            list: A list of inventory items.
+
+        """
+        device_id = self._device.metadata['netbox_object'].id
+        return [dict(i) for i in self._api.dcim.inventory_items.filter(device_id=device_id)]
+
 
 class NetboxInventory:
     """Use Netbox as inventory to gather the list of devices to manage."""
