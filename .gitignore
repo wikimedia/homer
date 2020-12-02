@@ -1,5 +1,5 @@
 /build/
-/env/
+/.venv/
 /output/
 /.cache/
 /.coverage
