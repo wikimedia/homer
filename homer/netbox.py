@@ -130,6 +130,25 @@ class NetboxDeviceData(BaseNetboxDeviceData):  # pylint: disable=too-many-ancest
         device_id = self._device.metadata['netbox_object'].id
         return [dict(i) for i in self._api.dcim.inventory_items.filter(device_id=device_id)]
 
+    def _get_vlans(self) -> Dict[int, Any]:
+        """Returns all the vlans defined on a device.
+
+        Returns:
+            dict: a dict of vlans.
+
+        """
+        vlans = {}
+        device_id = self._device.metadata['netbox_object'].id
+
+        for interface in self._api.dcim.interfaces.filter(device_id=device_id):
+            if interface.untagged_vlan and interface.untagged_vlan.vid not in vlans:
+                vlans[interface.untagged_vlan.vid] = interface.untagged_vlan
+            if interface.tagged_vlans:
+                for tagged_vlan in interface.tagged_vlans:
+                    if tagged_vlan.vid not in vlans:
+                        vlans[tagged_vlan.vid] = tagged_vlan
+        return vlans
+
 
 class NetboxInventory:
     """Use Netbox as inventory to gather the list of devices to manage."""
