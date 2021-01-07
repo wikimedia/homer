@@ -67,6 +67,7 @@ setup(
     long_description=LONG_DESCRIPTION,
     long_description_content_type='text/x-rst',
     name='homer',  # Must be the same used for __version__ in __init__.py
+    package_data={'homer': ['py.typed']},
     packages=find_packages(exclude=['*.tests', '*.tests.*', 'homer_plugins']),
     platforms=['GNU/Linux'],
     setup_requires=SETUP_REQUIRES,
