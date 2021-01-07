@@ -1,6 +1,29 @@
 Homer Changelog
 ---------------
 
+`v0.2.6`_ (2021-01-07)
+^^^^^^^^^^^^^^^^^^^^^^
+
+New features
+""""""""""""
+
+* junos: colorize configuration diff (`T260769`_).
+* netbox: add device's inventory support (`T257392`_).
+* netbox: add per device ``_get_vlans()``. Get all the intefaces of a device and generate a dict with all the vlans
+  configured on those interfaces.
+
+Minor improvements
+""""""""""""""""""
+
+* junos: catch exceptions in rollbacks. The rollback operation could also fail, catch the error and log it but do not
+  make the whole run to fail.
+
+Miscellanea
+"""""""""""
+
+* dependency: remove temporary upper limit for test dependency prospector, not needed anymore.
+* tox: remove ``--skip B322`` from Bandit config, not supported anymore.
+* type hints: mark the package as type hinted, making it PEP 561 compatible.
 
 `v0.2.5`_ (2020-08-13)
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -164,6 +187,8 @@ Miscellanea
 .. _`T244363`: https://phabricator.wikimedia.org/T244363
 .. _`T249224`: https://phabricator.wikimedia.org/T249224
 .. _`T253795`: https://phabricator.wikimedia.org/T253795
+.. _`T257392`: https://phabricator.wikimedia.org/T257392
+.. _`T260769`: https://phabricator.wikimedia.org/T260769
 
 .. _`v0.1.0`: https://github.com/wikimedia/operations-software-homer/releases/tag/v0.1.0
 .. _`v0.1.1`: https://github.com/wikimedia/operations-software-homer/releases/tag/v0.1.1
@@ -173,3 +198,4 @@ Miscellanea
 .. _`v0.2.3`: https://github.com/wikimedia/homer/releases/tag/v0.2.3
 .. _`v0.2.4`: https://github.com/wikimedia/homer/releases/tag/v0.2.4
 .. _`v0.2.5`: https://github.com/wikimedia/homer/releases/tag/v0.2.5
+.. _`v0.2.6`: https://github.com/wikimedia/homer/releases/tag/v0.2.6
