@@ -22,6 +22,7 @@ def mock_netbox_device(name, role, site, status,  # pylint: disable=too-many-arg
                        ip4=False, ip6=False, virtual_chassis=False, platform=True):
     """Returns a mocked Netbox device object."""
     device = NetboxObject()
+    device.id = 123  # pylint: disable=invalid-name
     device.name = name
     device.device_role = NetboxObject()
     device.device_role.slug = role
@@ -155,11 +156,23 @@ class TestNetboxDeviceData:
         self.netbox_api.dcim.devices.filter.return_value = netbox_devices
 
         netbox_data = NetboxDeviceData(self.netbox_api, devices[0])
+        # Call multiple times so that we can check the results are cached
         for _ in range(2):
             assert [d['name'] for d in netbox_data['virtual_chassis_members']] == list(names)
 
         # Ensure the data was cached and the API was called only once.
         assert self.netbox_api.dcim.devices.filter.call_count == 1
+
+    def test_get_inventory(self):
+        """It should return all the inventory items of a device."""
+        netbox_object = NetboxObject()
+        netbox_object.item = 'inventory item'
+        self.netbox_api.dcim.inventory_items.filter.return_value = [netbox_object]
+
+        netbox_data = NetboxDeviceData(self.netbox_api, self.device)
+
+        assert netbox_data['inventory'] == [{'item': netbox_object.item}]
+        self.netbox_api.dcim.inventory_items.filter.assert_called_once_with(device_id=123)
 
 
 class TestNetboxInventory:
