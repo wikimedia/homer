@@ -5,8 +5,6 @@ from unittest import mock
 
 import pytest
 
-from pynetbox import api
-
 from homer.devices import Device
 from homer.exceptions import HomerError
 from homer.netbox import BaseNetboxData, NetboxData, NetboxDeviceData, NetboxInventory
@@ -77,7 +75,7 @@ class TestBaseNetboxData:
 
     def setup_method(self):
         """Initialize the test instances."""
-        self.netbox_api = mock.MagicMock(specset=api)
+        self.netbox_api = mock.MagicMock()  # Can't use spec_set because of pynetbox lazy creation
         self.netbox_data = BaseNetboxData(self.netbox_api)
 
         def key_raise():
@@ -106,7 +104,7 @@ class TestNetboxData:
 
     def setup_method(self):
         """Initialize the test instances."""
-        self.netbox_api = mock.MagicMock(specset=api)
+        self.netbox_api = mock.MagicMock()  # Can't use spec_set because of pynetbox lazy creation
         self.netbox_data = NetboxData(self.netbox_api)
 
     def test_init(self):
@@ -127,7 +125,7 @@ class TestNetboxDeviceData:
 
     def setup_method(self):
         """Initialize the test instances."""
-        self.netbox_api = mock.MagicMock(specset=api)
+        self.netbox_api = mock.MagicMock()  # Can't use spec_set because of pynetbox lazy creation
         netbox_device = mock_netbox_device('device1.example.com', 'role1', 'site1', 'Active')
         self.device = Device(netbox_device.name, {'netbox_object': netbox_device}, {}, {})
         self.netbox_data = NetboxDeviceData(self.netbox_api, self.device)
