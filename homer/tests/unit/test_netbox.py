@@ -169,10 +169,56 @@ class TestNetboxDeviceData:
         netbox_object.item = 'inventory item'
         self.netbox_api.dcim.inventory_items.filter.return_value = [netbox_object]
 
-        netbox_data = NetboxDeviceData(self.netbox_api, self.device)
-
-        assert netbox_data['inventory'] == [{'item': netbox_object.item}]
+        assert self.netbox_data['inventory'] == [{'item': netbox_object.item}]
         self.netbox_api.dcim.inventory_items.filter.assert_called_once_with(device_id=123)
+
+    def test_get_circuits(self):
+        """It should return all the inventory items of a device."""
+        cable_1 = NetboxObject()
+        cable_1.termination_a_type = 'circuits.circuittermination'
+        cable_1.termination_b = NetboxObject()
+        cable_1.termination_b.name = 'int1'
+        cable_1.termination_a = NetboxObject()
+        cable_1.termination_a.circuit = NetboxObject()
+        cable_1.termination_a.circuit.id = 1
+        cable_2 = NetboxObject()
+        cable_2.termination_a_type = 'unused'
+        cable_2.termination_b_type = 'circuits.circuittermination'
+        cable_2.termination_a = NetboxObject()
+        cable_2.termination_a.name = 'int2'
+        cable_2.termination_b = NetboxObject()
+        cable_2.termination_b.circuit = NetboxObject()
+        cable_2.termination_b.circuit.id = 2
+        cable_3 = NetboxObject()
+        cable_3.termination_a_type = 'unused'
+        cable_3.termination_b_type = 'unused'
+
+        self.netbox_api.circuits.circuits.get.return_value = {}
+        self.netbox_api.dcim.cables.filter.return_value = [cable_1, cable_2, cable_3]
+
+        assert self.netbox_data['circuits'] == {'int1': {}, 'int2': {}}
+        self.netbox_api.dcim.cables.filter.assert_called_once_with(device_id=123)
+        calls = [mock.call(1), mock.call(2)]
+        self.netbox_api.circuits.circuits.get.assert_has_calls(calls)
+
+    def test_get_vlans(self):
+        """It should return the vlans defined on a device's interfaces."""
+        interface1 = NetboxObject()  # This is a fake interface object
+        interface1.untagged_vlan = NetboxObject()  # That interface have fake tagged and untagged vlans
+        interface1.untagged_vlan.vid = 666
+        interface1.tagged_vlans = [NetboxObject(), NetboxObject()]
+        interface1.tagged_vlans[0].vid = 667
+        interface1.tagged_vlans[1].vid = 667
+        interface2 = NetboxObject()  # This is a fake interface object
+        interface2.untagged_vlan = NetboxObject()  # That interface have fake tagged and untagged vlans
+        interface2.untagged_vlan.vid = 666
+        interface2.tagged_vlans = None
+        self.netbox_api.dcim.interfaces.filter.return_value = [interface1, interface2]
+        # We want the function with the fake inbound data to match the one untagged and tagged vlans
+        assert self.netbox_data['vlans'] == {666: interface1.untagged_vlan, 667: interface1.tagged_vlans[0]}
+
+        # And we want the fake API to be called only once
+        self.netbox_api.dcim.interfaces.filter.assert_called_once_with(device_id=123)
 
 
 class TestNetboxInventory:
