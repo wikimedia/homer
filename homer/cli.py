@@ -55,6 +55,7 @@ def main(argv: Optional[list] = None) -> int:
     args = argument_parser().parse_args(argv)
     logging.basicConfig(level=args.loglevel)
     if args.loglevel != logging.DEBUG:  # Suppress noisy loggers
+        logging.getLogger("absl").setLevel(logging.WARNING)
         logging.getLogger('ncclient').setLevel(logging.WARNING)
 
     kwargs = {}

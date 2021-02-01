@@ -12,6 +12,7 @@ import pynetbox
 
 from pkg_resources import DistributionNotFound, get_distribution
 
+from homer.capirca import CapircaGenerate
 from homer.config import HierarchicalConfig, load_yaml_config
 from homer.devices import Device, Devices
 from homer.exceptions import HomerAbortError, HomerError, HomerTimeoutError
@@ -50,9 +51,9 @@ class Homer:
         """
         logger.debug('Initialized with configuration: %s', main_config)
         self._main_config = main_config
-        private_base_path = self._main_config['base_paths'].get('private', '')
+        self.private_base_path = self._main_config['base_paths'].get('private', '')
         self._config = HierarchicalConfig(
-            self._main_config['base_paths']['public'], private_base_path=private_base_path)
+            self._main_config['base_paths']['public'], private_base_path=self.private_base_path)
 
         self._netbox_api = None
         self._device_plugin = None
@@ -77,15 +78,15 @@ class Homer:
                 data.pop('config', None)
 
         private_devices_config: Dict = {}
-        if private_base_path:
+        if self.private_base_path:
             private_devices_config = load_yaml_config(
-                os.path.join(private_base_path, 'config', 'devices.yaml'))
+                os.path.join(self.private_base_path, 'config', 'devices.yaml'))
 
         self._ignore_warning = self._main_config.get('transports', {}).get('junos', {}).get('ignore_warning', False)
         self._transport_username = self._main_config.get('transports', {}).get('username', '')
         self._transport_ssh_config = self._main_config.get('transports', {}).get('ssh_config', None)
         self._devices = Devices(devices, devices_config, private_devices_config)
-        self._renderer = Renderer(self._main_config['base_paths']['public'], private_base_path)
+        self._renderer = Renderer(self._main_config['base_paths']['public'], self.private_base_path)
         self._output_base_path = pathlib.Path(self._main_config['base_paths']['output'])
 
     def generate(self, query: str) -> int:
@@ -253,7 +254,7 @@ class Homer:
             if path.is_file() and path.suffix == Homer.OUT_EXTENSION:
                 path.unlink()
 
-    def _execute(self, callback: Callable, query: str, **kwargs: str) -> Tuple[Dict, DefaultDict]:
+    def _execute(self, callback: Callable, query: str, **kwargs: str) -> Tuple[Dict, DefaultDict]:  # noqa, mccabe: MC0001 too complex
         """Execute Homer based on the given action and query.
 
         Arguments:
@@ -279,7 +280,15 @@ class Homer:
             logger.info('Generating configuration for %s', device.fqdn)
 
             try:
+                device_config = []
                 device_data = self._config.get(device)
+                # Render the ACLs using Capirca
+                if 'capirca' in device_data:
+                    capirca = CapircaGenerate(self._main_config, device_data['capirca'], self._netbox_api)
+                    generated_acls = capirca.generate_acls()
+                    if generated_acls:
+                        device_config.extend(generated_acls)
+
                 if netbox_data is not None:
                     device_data['netbox'] = {
                         'global': netbox_data,
@@ -287,8 +296,8 @@ class Homer:
                     }
                     if self._device_plugin is not None:
                         device_data['netbox']['device_plugin'] = self._device_plugin(self._netbox_api, device)
-
-                device_config = self._renderer.render(device.metadata['role'], device_data)
+                # Render the Jinja templates based on yaml + netbox data
+                device_config.append(self._renderer.render(device.metadata['role'], device_data))
             except HomerError:
                 logger.exception('Device %s failed to render the template, skipping.', device.fqdn)
                 successes[False].append(device.fqdn)
@@ -296,7 +305,7 @@ class Homer:
 
             for attempt in range(1, TIMEOUT_ATTEMPTS + 1):
                 try:
-                    device_success, device_diff = callback(device, device_config, attempt, **kwargs)
+                    device_success, device_diff = callback(device, '\n'.join(device_config), attempt, **kwargs)
                     break
                 except HomerTimeoutError as e:
                     logger.error('Commit attempt %d/%d failed: %s', attempt, TIMEOUT_ATTEMPTS, e)

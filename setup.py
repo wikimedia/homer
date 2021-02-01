@@ -12,6 +12,9 @@ INSTALL_REQUIRES = [
     'junos-eznc>=2.2.1,<3',
     'pynetbox>=4.0.6',
     'pyyaml>=3.11',
+    'capirca>=2.0.2',
+    'python-dateutil>=2.8.1',
+    'pytz>=2021.1'
 ]
 
 # Extra dependencies
