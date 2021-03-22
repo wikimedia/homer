@@ -22,13 +22,16 @@ EXTRAS_REQUIRE = {
         'flake8>=3.2.1',
         'flake8-import-order>=0.18.1',
         'mypy>=0.470',
-        'prospector[with_everything]>=0.12.4',
         'pytest-cov>=1.8.0',
         'pytest-xdist>=1.15.0',
         'pytest>=3.3.0',
         'sphinx_rtd_theme>=0.1.6',
         'sphinx-argparse>=0.1.15',
         'Sphinx>=1.4.9',
+    ],
+    'prospector': [
+        'prospector[with_everything]>=0.12.4',
+        'pytest>=3.3.0',
     ],
 }
 
