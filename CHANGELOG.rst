@@ -1,6 +1,24 @@
 Homer Changelog
 ---------------
 
+`v0.2.7`_ (2021-04-20)
+^^^^^^^^^^^^^^^^^^^^^^
+
+New features
+""""""""""""
+* Add Capirca support.
+
+  * For examples on how to use it see `gerrit/663535`_ and Homer's `Capirca documentation`_ (`T273865`_).
+
+Bug fixes
+"""""""""
+
+* tests: fix pip backtracking moving prospector to its own environment in tox.
+* tests: add missing tests for the circuits and vlan capabilities in the Netbox module.
+* tests: add missing tests for the device data inventory.
+* tests: fix typo in mocked object.
+* tests: fix deprecated pytest CLI argument.
+
 `v0.2.6`_ (2021-01-07)
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -181,6 +199,9 @@ Miscellanea
 
 * First release (`T228388`_).
 
+.. _`Capirca documentation`: https://wikitech.wikimedia.org/wiki/Homer#Capirca_(ACL_generation)
+
+.. _`gerrit/663535`: https://gerrit.wikimedia.org/r/c/operations/homer/public/+/663535
 
 .. _`T228388`: https://phabricator.wikimedia.org/T228388
 .. _`T244362`: https://phabricator.wikimedia.org/T244362
@@ -189,6 +210,7 @@ Miscellanea
 .. _`T253795`: https://phabricator.wikimedia.org/T253795
 .. _`T257392`: https://phabricator.wikimedia.org/T257392
 .. _`T260769`: https://phabricator.wikimedia.org/T260769
+.. _`T273865`: https://phabricator.wikimedia.org/T273865
 
 .. _`v0.1.0`: https://github.com/wikimedia/operations-software-homer/releases/tag/v0.1.0
 .. _`v0.1.1`: https://github.com/wikimedia/operations-software-homer/releases/tag/v0.1.1
@@ -199,3 +221,4 @@ Miscellanea
 .. _`v0.2.4`: https://github.com/wikimedia/homer/releases/tag/v0.2.4
 .. _`v0.2.5`: https://github.com/wikimedia/homer/releases/tag/v0.2.5
 .. _`v0.2.6`: https://github.com/wikimedia/homer/releases/tag/v0.2.6
+.. _`v0.2.7`: https://github.com/wikimedia/homer/releases/tag/v0.2.7
