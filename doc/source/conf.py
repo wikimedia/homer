@@ -14,11 +14,8 @@
 import os
 import sys
 
-from pkg_resources import get_distribution
-
 import sphinx_rtd_theme
-
-from sphinx import __version__ as sphinx_version
+from pkg_resources import get_distribution
 
 # Adjust path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
@@ -59,7 +56,7 @@ master_doc = 'index'
 # General information about the project.
 project = 'Homer'
 title = '{project} Documentation'.format(project=project)
-copyright = ('2019, Riccardo Coccioli <rcoccioli@wikimedia.org>, Arzhel Younsi <ayounsi@wikimedia.org>, '
+copyright = ('2019-2021, Riccardo Coccioli <rcoccioli@wikimedia.org>, Arzhel Younsi <ayounsi@wikimedia.org>, '
              'Faidon Liambotis <faidon@wikimedia.org>, Wikimedia Foundation, Inc.')
 author = 'Riccardo Coccioli'
 
@@ -96,9 +93,6 @@ todo_include_todos = True
 
 html_theme = 'sphinx_rtd_theme'
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-sphinx_version_parts = [int(i) for i in sphinx_version.split('.')]
-if sphinx_version_parts[0] == 1 and sphinx_version_parts[1] < 6:
-    html_use_smartypants = False
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -141,7 +135,12 @@ napoleon_use_rtype = True
 napoleon_use_keyword = True
 
 # Autodoc settings
-autodoc_default_flags = ['members', 'show-inheritance', 'inherited-members']
+autodoc_default_options = {
+    # Using None as value instead of True to support the version of Sphinx used in Buster
+    'members': None,
+    'member-order': 'groupwise',
+    'show-inheritance': None,
+}
 autoclass_content = 'both'
 
 
@@ -161,14 +160,7 @@ def skip_external_inherited(app, what, name, obj, skip, options):
             classes = list(c.__bases__) + classes  # Continue in the inheritance tree
 
 
-def skip_exceptions_init(app, what, name, obj, skip, options):
-    """Skip __init__ and with_traceback methods for Exception classes."""
-    if what == 'exception' and name in ('__init__', 'with_traceback'):
-        return True
-
-
 def setup(app):
     """Register the filter_namedtuple_docstrings function."""
-    app.connect('autodoc-skip-member', skip_exceptions_init)
     app.connect('autodoc-skip-member', skip_external_inherited)
     app.add_stylesheet('theme_overrides.css')  # override wide tables in RTD theme
