@@ -1,6 +1,15 @@
 Homer Changelog
 ---------------
 
+`v0.2.8`_ (2021-04-29)
+^^^^^^^^^^^^^^^^^^^^^^
+
+Bug fixes
+"""""""""
+
+* setup.py: limit max version of pynetbox that in release 6.0.0 introduced some breacking changes in the API.
+* doc: fix documentation generation that prevented from properly including the auto-generated documentation.
+
 `v0.2.7`_ (2021-04-20)
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -222,3 +231,4 @@ Miscellanea
 .. _`v0.2.5`: https://github.com/wikimedia/homer/releases/tag/v0.2.5
 .. _`v0.2.6`: https://github.com/wikimedia/homer/releases/tag/v0.2.6
 .. _`v0.2.7`: https://github.com/wikimedia/homer/releases/tag/v0.2.7
+.. _`v0.2.8`: https://github.com/wikimedia/homer/releases/tag/v0.2.8
