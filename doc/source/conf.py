@@ -163,4 +163,4 @@ def skip_external_inherited(app, what, name, obj, skip, options):
 def setup(app):
     """Register the filter_namedtuple_docstrings function."""
     app.connect('autodoc-skip-member', skip_external_inherited)
-    app.add_stylesheet('theme_overrides.css')  # override wide tables in RTD theme
+    app.add_css_file('theme_overrides.css')  # override wide tables in RTD theme
