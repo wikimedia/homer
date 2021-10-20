@@ -31,6 +31,8 @@ EXTRAS_REQUIRE = {
         'sphinx_rtd_theme>=0.1.6',
         'sphinx-argparse>=0.1.15',
         'Sphinx>=1.4.9',
+        'types-pkg_resources',
+        'types-PyYAML',
     ],
     'prospector': [
         'prospector[with_everything]>=0.12.4',

@@ -6,7 +6,7 @@ import os
 import re
 
 from copy import deepcopy
-from typing import Dict, Union
+from typing import cast, Dict, Union
 
 import yaml
 
@@ -32,7 +32,7 @@ def ip_network_constructor(loader: yaml.constructor.BaseConstructor, node: str) 
         str: if not possible, return the original string
 
     """
-    value = loader.construct_scalar(node)
+    value = str(loader.construct_scalar(cast(yaml.ScalarNode, node)))
     try:
         return ipaddress.ip_network(value)
     except ValueError:
@@ -57,7 +57,7 @@ def ip_address_constructor(loader: yaml.constructor.BaseConstructor, node: str) 
         str: if not possible, return the original string
 
     """
-    value = loader.construct_scalar(node)
+    value = str(loader.construct_scalar(cast(yaml.ScalarNode, node)))
     try:
         return ipaddress.ip_address(value)
     except ValueError as e:
