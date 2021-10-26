@@ -11,3 +11,7 @@ class HomerAbortError(HomerError):
 
 class HomerTimeoutError(HomerError):
     """Exception class for actions that timeout."""
+
+
+class HomerConnectError(HomerError):
+    """Exception class raised when unable to connect to a device."""

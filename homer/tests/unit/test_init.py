@@ -153,7 +153,7 @@ class TestHomer:
         mocked_input.return_value = 'yes'
         ret = self.homer.commit('device*', message=message)
         assert ret == 1
-        assert 'Commit attempt 3/3 failed' in caplog.text
+        assert 'Attempt 3/3 failed' in caplog.text
 
     @mock.patch('builtins.input')
     @mock.patch('homer.sys.stdout.isatty')

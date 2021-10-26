@@ -3,11 +3,11 @@ from unittest import mock
 
 import pytest
 
-from jnpr.junos.exception import CommitError, ConfigLoadError, RpcTimeoutError, UnlockError
+from jnpr.junos.exception import CommitError, ConfigLoadError, ConnectError, RpcTimeoutError, UnlockError
 from lxml import etree
 from ncclient.operations.errors import TimeoutExpiredError
 
-from homer.exceptions import HomerAbortError, HomerError, HomerTimeoutError
+from homer.exceptions import HomerAbortError, HomerConnectError, HomerError, HomerTimeoutError
 from homer.transports import junos
 
 
@@ -48,7 +48,7 @@ EXPECTED_DIFF = """
 
 
 @mock.patch('homer.transports.junos.ConnectedDevice', autospec=True)
-def test_connected_device(mocked_device):
+def test_connected_device_ok(mocked_device):
     """It should return a context manager around a connected JunOS device."""
     with junos.connected_device('device1.example.com', username='username') as device:
         mocked_device.assert_called_once_with('device1.example.com', username='username', ssh_config=None)
@@ -56,6 +56,18 @@ def test_connected_device(mocked_device):
         assert not mocked_device.return_value.close.called
 
     mocked_device.return_value.close.assert_called_once_with()
+
+
+@mock.patch('homer.transports.junos.ConnectedDevice', autospec=True)
+def test_connected_device_connect_error(mocked_device):
+    """It should raise HomerConnectError if there is an error connecting to the device."""
+    mocked_device.side_effect = ConnectError('device1.example.com')
+    with pytest.raises(HomerConnectError, match='Unable to connect to device1.example.com'):
+        with junos.connected_device('device1.example.com', username='username') as _:
+            raise RuntimeError  # It should not execute this
+
+        mocked_device.assert_called_once_with('device1.example.com', username='username', ssh_config=None)
+        mocked_device.return_value.close.assert_not_called()
 
 
 @mock.patch('homer.transports.junos.JunOSDevice', autospec=True)

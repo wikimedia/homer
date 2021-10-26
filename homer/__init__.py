@@ -15,7 +15,7 @@ from pkg_resources import DistributionNotFound, get_distribution
 from homer.capirca import CapircaGenerate
 from homer.config import HierarchicalConfig, load_yaml_config
 from homer.devices import Device, Devices
-from homer.exceptions import HomerAbortError, HomerError, HomerTimeoutError
+from homer.exceptions import HomerAbortError, HomerConnectError, HomerError, HomerTimeoutError
 from homer.netbox import NetboxData, NetboxDeviceData, NetboxInventory
 from homer.templates import Renderer
 from homer.transports.junos import connected_device
@@ -306,8 +306,8 @@ class Homer:
                 try:
                     device_success, device_diff = callback(device, '\n'.join(device_config), attempt, **kwargs)
                     break
-                except HomerTimeoutError as e:
-                    logger.error('Commit attempt %d/%d failed: %s', attempt, TIMEOUT_ATTEMPTS, e)
+                except (HomerTimeoutError, HomerConnectError) as e:
+                    logger.error('Attempt %d/%d failed: %s', attempt, TIMEOUT_ATTEMPTS, e)
             else:
                 device_success = False
                 device_diff = ''

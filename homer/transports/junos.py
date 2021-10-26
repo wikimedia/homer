@@ -5,11 +5,11 @@ from contextlib import contextmanager
 from typing import Callable, Iterator, List, Optional, Tuple, Union
 
 from jnpr.junos import Device as JunOSDevice
-from jnpr.junos.exception import CommitError, ConfigLoadError, RpcTimeoutError, UnlockError
+from jnpr.junos.exception import CommitError, ConfigLoadError, ConnectError, RpcTimeoutError, UnlockError
 from jnpr.junos.utils.config import Config
 from ncclient.operations.errors import TimeoutExpiredError
 
-from homer.exceptions import HomerError, HomerTimeoutError
+from homer.exceptions import HomerConnectError, HomerError, HomerTimeoutError
 
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,11 @@ def connected_device(fqdn: str, *, username: str = '', ssh_config: Optional[str]
         ConnectedDevice: the Juniper connected device instance.
 
     """
-    device = ConnectedDevice(fqdn, username=username, ssh_config=ssh_config)
+    try:
+        device = ConnectedDevice(fqdn, username=username, ssh_config=ssh_config)
+    except ConnectError as e:
+        raise HomerConnectError(f'Unable to connect to {fqdn}') from e
+
     try:
         yield device
     finally:
