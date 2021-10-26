@@ -12,7 +12,7 @@ from ncclient.operations.errors import TimeoutExpiredError
 from homer.exceptions import HomerError, HomerTimeoutError
 
 
-logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+logger = logging.getLogger(__name__)
 DIFF_ADDED_CODE = 32
 DIFF_REMOVED_CODE = 31
 DIFF_MOVED_CODE = 33
@@ -98,9 +98,9 @@ class ConnectedDevice:
                 self._device.cu.commit(confirm=2, comment=message)
             self._device.cu.commit_check()
         except RpcTimeoutError as e:
-            raise HomerTimeoutError(str(e))
+            raise HomerTimeoutError(str(e)) from e
         except CommitError as e:
-            raise HomerError('Commit error: {err}'.format(err=ConnectedDevice._parse_commit_error(e))) from e
+            raise HomerError(f'Commit error: {ConnectedDevice._parse_commit_error(e)}') from e
 
     def commit_check(self, config: str,
                      ignore_warning: Union[bool, str, List[str]] = False) -> Tuple[bool, Optional[str]]:
@@ -225,7 +225,7 @@ def color_diff(diff: str) -> str:
             code = 0
 
         if code:
-            line = '\x1b[{code}m{line}\x1b[39m'.format(code=code, line=line)
+            line = f'\x1b[{code}m{line}\x1b[39m'
 
         lines.append(line)
 

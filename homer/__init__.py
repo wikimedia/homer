@@ -33,7 +33,7 @@ try:
 except DistributionNotFound:  # pragma: no cover - this should never happen during tests
     pass  # package is not installed
 
-logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+logger = logging.getLogger(__name__)
 
 
 class Homer:
@@ -119,7 +119,7 @@ class Homer:
         successes, diffs = self._execute(self._device_diff, query)
         has_diff = False
         for diff, diff_devices in diffs.items():
-            print('Changes for {n} devices: {devices}'.format(n=len(diff_devices), devices=diff_devices))
+            print(f'Changes for {len(diff_devices)} devices: {diff_devices}')
             if diff is None:
                 print('# Failed')
             elif not diff:
@@ -166,15 +166,14 @@ class Homer:
             or not and a second element with a string or None that is not used but is required by the callback API.
 
         """
-        output_path = self._output_base_path / '{fqdn}{out}'.format(fqdn=device.fqdn, out=Homer.OUT_EXTENSION)
-        with open(str(output_path), 'w') as f:
+        output_path = self._output_base_path / f'{device.fqdn}{Homer.OUT_EXTENSION}'
+        with open(str(output_path), 'w', encoding='utf-8') as f:
             f.write(device_config)
             logger.info('Written configuration for %s in %s', device.fqdn, output_path)
 
         return True, None
 
-    def _device_diff(self, device: Device, device_config: str,
-                     _: int) -> Tuple[bool, Optional[str]]:  # pylint: disable=no-self-use
+    def _device_diff(self, device: Device, device_config: str, _: int) -> Tuple[bool, Optional[str]]:
         """Perform a configuration diff between the generated configuration and the live one.
 
         Arguments:
@@ -215,7 +214,7 @@ class Homer:
             if not sys.stdout.isatty():
                 raise HomerError('Not in a TTY, unable to ask for confirmation')
 
-            print('Configuration diff for {fqdn}:\n{diff}'.format(fqdn=fqdn, diff=diff))
+            print(f'Configuration diff for {fqdn}:\n{diff}')
             print('Type "yes" to commit, "no" to abort.')
 
             for _ in range(2):

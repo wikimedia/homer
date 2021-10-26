@@ -47,7 +47,7 @@ class TestHomer:
 
     def test_generate_ok(self):
         """It should generate the compiled configuration files for the matching devices."""
-        spurious_file = self.output / 'spurious{suffix}'.format(suffix=homer.Homer.OUT_EXTENSION)
+        spurious_file = self.output / f'spurious{homer.Homer.OUT_EXTENSION}'
         spurious_file.touch()  # To check that the file will be removed
         spurious_dir = self.output / 'spurious'
         spurious_dir.mkdir()
@@ -69,7 +69,7 @@ class TestHomer:
             siteB_private_value;
             device2_private_value;
         """
-        with open(str(self.output / 'device2.example.com.out')) as f:
+        with open(str(self.output / 'device2.example.com.out'), encoding='utf-8') as f:
             assert textwrap.dedent(expected).lstrip('\n') == f.read()
 
     def test_generate_no_private(self):
@@ -90,7 +90,7 @@ class TestHomer:
             siteB_value;
             device2_value;
         """
-        with open(str(self.output / 'device2.example.com.out')) as f:
+        with open(str(self.output / 'device2.example.com.out'), encoding='utf-8') as f:
             assert textwrap.dedent(expected).lstrip('\n') == f.read()
 
     def test_execute_generate_fail_to_render(self):
@@ -228,5 +228,5 @@ class TestHomerNetbox:
             netbox_device_value;
             netbox_device_plugin;
         """
-        with open(str(self.output / 'device2.example.com.out')) as f:
+        with open(str(self.output / 'device2.example.com.out'), encoding='utf-8') as f:
             assert textwrap.dedent(expected).lstrip('\n') == f.read()

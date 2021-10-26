@@ -11,10 +11,10 @@ from homer.devices import Device
 from homer.exceptions import HomerError
 
 
-logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+logger = logging.getLogger(__name__)
 
 
-class BaseNetboxData(UserDict):  # pylint: disable=too-many-ancestors
+class BaseNetboxData(UserDict):
     """Base class to gather data dynamically from Netbox."""
 
     def __init__(self, api: pynetbox.api):
@@ -37,7 +37,7 @@ class BaseNetboxData(UserDict):  # pylint: disable=too-many-ancestors
             mixed: the dynamically gathered data.
 
         """
-        method_name = '_get_{key}'.format(key=key)
+        method_name = f'_get_{key}'
         if not hasattr(self, method_name):
             raise KeyError(key)
 
@@ -45,12 +45,12 @@ class BaseNetboxData(UserDict):  # pylint: disable=too-many-ancestors
             try:
                 self.data[key] = getattr(self, method_name)()
             except Exception as e:
-                raise HomerError('Failed to get key {key}'.format(key=key)) from e
+                raise HomerError(f'Failed to get key {key}') from e
 
         return self.data[key]
 
 
-class BaseNetboxDeviceData(BaseNetboxData):  # pylint: disable=too-many-ancestors
+class BaseNetboxDeviceData(BaseNetboxData):
     """Base class to gather device-specific data dynamically from Netbox."""
 
     def __init__(self, api: pynetbox.api, device: Device):
@@ -65,7 +65,7 @@ class BaseNetboxDeviceData(BaseNetboxData):  # pylint: disable=too-many-ancestor
         self._device = device
 
 
-class NetboxData(BaseNetboxData):  # pylint: disable=too-many-ancestors
+class NetboxData(BaseNetboxData):
     """Dynamic dictionary to gather the required generic data from Netbox."""
 
     def _get_vlans(self) -> List[Dict[str, Any]]:
@@ -78,7 +78,7 @@ class NetboxData(BaseNetboxData):  # pylint: disable=too-many-ancestors
         return [dict(i) for i in self._api.ipam.vlans.all()]
 
 
-class NetboxDeviceData(BaseNetboxDeviceData):  # pylint: disable=too-many-ancestors
+class NetboxDeviceData(BaseNetboxDeviceData):
     """Dynamic dictionary to gather the required device-specific data from Netbox."""
 
     def _get_virtual_chassis_members(self) -> Optional[List[Dict[str, Any]]]:

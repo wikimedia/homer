@@ -12,7 +12,7 @@ from capirca.lib import juniper, junipersrx, naming, policy
 
 from homer.exceptions import HomerError
 
-logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+logger = logging.getLogger(__name__)
 
 
 class CapircaGenerate():
@@ -38,15 +38,15 @@ class CapircaGenerate():
             try:
                 script_result = netbox.extras.scripts.get('capirca.GetHosts').result
                 if str(script_result.status) != 'Completed':
-                    raise HomerError('Netbox capirca.GetHosts script status is: {}.'.format(script_result.status))
+                    raise HomerError(f'Netbox capirca.GetHosts script status is: {script_result.status}.')
                 runtime = datetime.fromisoformat(script_result.completed[:-1])  # To remove the final Z
                 now = datetime.utcnow()
                 # Warn the user if the Netbox data is 3 day old or more
                 if runtime < now - timedelta(days=3):
                     logger.warning('Netbox capirca.GetHosts script is > 3 days old.')
                 netbox_definitons = script_result.data.output
-            except pynetbox.RequestError:
-                raise HomerError('Make sure homer can reach the capirca.GetHosts script on Netbox.')
+            except pynetbox.RequestError as e:
+                raise HomerError('Make sure homer can reach the capirca.GetHosts script on Netbox.') from e
             # ParseNetworkList expects an array of lines, while Netbox API returns a string with \n
             self.definitions.ParseNetworkList(netbox_definitons.splitlines())
 
@@ -78,9 +78,9 @@ class CapircaGenerate():
                 policy_file = public_policy_file
                 policies_dir = self._public_policies_dir
             else:
-                failures.append("Can't find Capirca policy file {}.".format(policy_name))
+                failures.append(f"Can't find Capirca policy file {policy_name}.")
                 continue
-            policy_text = policy_file.read_text()
+            policy_text = policy_file.read_text(encoding='utf-8')
             try:
                 policy_object = policy.ParsePolicy(policy_text, self.definitions,
                                                    optimize=True,
@@ -88,10 +88,10 @@ class CapircaGenerate():
                                                    base_dir=policies_dir)
             except policy.ShadingError as e:
                 # Term "hiding" another term
-                failures.append("Shading errors for {policy_name}: {e}.".format(policy_name=policy_name, e=e))
+                failures.append(f"Shading errors for {policy_name}: {e}.")
                 continue
             except (policy.Error, naming.Error) as e:
-                failures.append("Error parsing {policy_name}: {e}.".format(policy_name=policy_name, e=e))
+                failures.append(f"Error parsing {policy_name}: {e}.")
                 continue
 
             # https://github.com/google/capirca/blob/master/capirca/aclgen.py#L222
@@ -107,10 +107,10 @@ class CapircaGenerate():
                     found_platform = True
                     generated_acls.append(str(junipersrx.JuniperSRX(policy_object, exp_info=2)))
                 if not found_platform:
-                    failures.append("Unknown platform: {}.".format(str(platforms)))
+                    failures.append(f"Unknown platform: {platforms}.")
 
             except (juniper.Error) as e:
-                failures.append("Error generating {policy_name}: {e}.".format(policy_name=policy_name, e=e))
+                failures.append(f"Error generating {policy_name}: {e}.")
                 continue
         if failures:
             raise HomerError("Capirca error(s)\n" + '\n'.join(failures))

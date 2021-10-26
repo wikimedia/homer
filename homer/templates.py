@@ -9,7 +9,7 @@ import jinja2
 from homer.exceptions import HomerError
 
 
-logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+logger = logging.getLogger(__name__)
 
 
 class Renderer:
@@ -51,11 +51,11 @@ class Renderer:
             None: on failure.
 
         """
-        template_file = '{name}.conf'.format(name=template_name)
+        template_file = f'{template_name}.conf'
         try:
             template = self._env.get_template(template_file)
             return template.render(data)
         except jinja2.exceptions.TemplateSyntaxError as e:
-            raise HomerError('Syntax error on template {file}'.format(file=template_file)) from e
+            raise HomerError(f'Syntax error on template {template_file}') from e
         except jinja2.exceptions.TemplateError as e:
-            raise HomerError('Could not render template {file}'.format(file=template_file)) from e
+            raise HomerError(f'Could not render template {template_file}') from e

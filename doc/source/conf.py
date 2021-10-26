@@ -55,7 +55,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Homer'
-title = '{project} Documentation'.format(project=project)
+title = f'{project} Documentation'
 copyright = ('2019-2021, Riccardo Coccioli <rcoccioli@wikimedia.org>, Arzhel Younsi <ayounsi@wikimedia.org>, '
              'Faidon Liambotis <faidon@wikimedia.org>, Wikimedia Foundation, Inc.')
 author = 'Riccardo Coccioli'

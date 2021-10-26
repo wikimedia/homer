@@ -18,8 +18,10 @@ class NetboxObject:  # pylint: disable=too-many-instance-attributes
         return iter(vars(self).items())
 
 
-def mock_netbox_device(name, role, site, status,  # pylint: disable=too-many-arguments,too-many-branches
-                       ip4=False, ip6=False, virtual_chassis=False, platform=True):
+# Disablint pylint useless-suppression because it would fire for the too-many-branches check, if removing that one too
+# it will fire because of too-many-branches. Unable to reproduce in isolation quickly.
+def mock_netbox_device(name, role, site,  # pylint: disable=too-many-arguments,too-many-branches,useless-suppression
+                       status, ip4=False, ip6=False, virtual_chassis=False, platform=True):
     """Returns a mocked Netbox device object."""
     device = NetboxObject()
     device.id = 123  # pylint: disable=invalid-name
@@ -50,7 +52,7 @@ def mock_netbox_device(name, role, site, status,  # pylint: disable=too-many-arg
 
     if virtual_chassis:
         device.virtual_chassis = NetboxObject()
-        device.virtual_chassis.id = 1  # pylint: disable=invalid-name
+        device.virtual_chassis.id = 1
     else:
         device.virtual_chassis = None
 

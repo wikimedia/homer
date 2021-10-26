@@ -238,7 +238,7 @@ class TestConnectedDevice:
 
         assert not success
         assert diff == 'diff'
-        assert 'Commit check error on {fqdn}: Error Message'.format(fqdn=self.fqdn) in caplog.text
+        assert f'Commit check error on {self.fqdn}: Error Message' in caplog.text
         mocked_junos_device.return_value.cu.commit_check.assert_called_once_with()
         mocked_junos_device.return_value.cu.rollback.assert_called_once_with()
 
@@ -253,7 +253,7 @@ class TestConnectedDevice:
 
         assert not success
         assert diff == 'diff'
-        assert 'Failed to commit check on {fqdn}: Error Message'.format(fqdn=self.fqdn) in caplog.text
+        assert f'Failed to commit check on {self.fqdn}: Error Message' in caplog.text
         mocked_junos_device.return_value.cu.commit_check.assert_called_once_with()
         mocked_junos_device.return_value.cu.rollback.assert_called_once_with()
 
@@ -268,7 +268,7 @@ class TestConnectedDevice:
 
         assert success
         assert diff == 'diff'
-        assert 'Invalid rollback ID on {fqdn}: 50'.format(fqdn=self.fqdn) in caplog.text
+        assert f'Invalid rollback ID on {self.fqdn}: 50' in caplog.text
         mocked_junos_device.return_value.cu.commit_check.assert_called_once_with()
         mocked_junos_device.return_value.cu.rollback.assert_called_once_with()
 
@@ -284,7 +284,7 @@ class TestConnectedDevice:
 
         assert success
         assert diff == 'diff'
-        assert 'Failed to rollback on {fqdn}: RpcTimeoutError'.format(fqdn=self.fqdn) in caplog.text
+        assert f'Failed to rollback on {self.fqdn}: RpcTimeoutError' in caplog.text
         mocked_junos_device.return_value.cu.commit_check.assert_called_once_with()
         mocked_junos_device.return_value.cu.rollback.assert_called_once_with()
 

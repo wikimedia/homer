@@ -13,7 +13,7 @@ import yaml
 from homer.devices import Device
 from homer.exceptions import HomerError
 
-logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+logger = logging.getLogger(__name__)
 
 
 def ip_network_constructor(loader: yaml.constructor.BaseConstructor, node: str) -> Union[str,
@@ -90,11 +90,11 @@ def load_yaml_config(config_file: str) -> Dict:
         return config
 
     try:
-        with open(config_file, 'r') as fh:
+        with open(config_file, 'r', encoding='utf-8') as fh:
             config = yaml.safe_load(fh)
 
-    except Exception as e:  # pylint: disable=broad-except
-        raise HomerError('Could not load config file {file}: {e}'.format(file=config_file, e=e)) from e
+    except Exception as e:
+        raise HomerError(f'Could not load config file {config_file}: {e}') from e
 
     if config is None:
         config = {}
@@ -123,11 +123,11 @@ class HierarchicalConfig:
         paths = {'public': base_path, 'private': private_base_path}
         for path, name in itertools.product(paths.keys(), ('common', 'roles', 'sites')):
             if paths[path]:
-                config = load_yaml_config(os.path.join(paths[path], 'config', '{name}.yaml'.format(name=name)))
+                config = load_yaml_config(os.path.join(paths[path], 'config', f'{name}.yaml'))
             else:
                 config = {}
 
-            self._configs['{p}_{n}'.format(p=path, n=name)] = config
+            self._configs[f'{path}_{name}'] = config
 
     def get(self, device: Device) -> Dict:
         """Get the generated configuration for a specific device instance with all the overrides resolved.
@@ -159,8 +159,8 @@ class HierarchicalConfig:
             **self._configs['private_sites'].get(site, {}),
             **device.private,
         }
-        if public.keys() & private.keys():
-            raise HomerError('Configuration key(s) found in both public and private config: {keys}'.format(
-                keys=public.keys() & private.keys()))
+        keys = public.keys() & private.keys()
+        if keys:
+            raise HomerError(f'Configuration key(s) found in both public and private config: {keys}')
 
         return {**public, **deepcopy(private)}
