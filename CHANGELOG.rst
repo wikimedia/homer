@@ -1,6 +1,27 @@
 Homer Changelog
 ---------------
 
+`v0.2.9`_ (2021-11-09)
+^^^^^^^^^^^^^^^^^^^^^^
+
+Bug fixes
+"""""""""
+
+* transports: catch connection error:
+
+  * To prevent that a connection error on one device fails the entire run for all devices, catch a new
+    ``HomerConnectError`` when executing the action on the devices.
+  * JunOS transport: raise ``HomerConnectError`` when failing to connect to the device.
+  * Exceptions: add a new ``HomerConnectError`` exception class.
+  * Fix typo in retry log message on timeout.
+
+Miscellanea
+"""""""""""
+
+* Add Python 3.9 support.
+* setup.py: include type hints for dependencies.
+* pylint: fixed newly reported issues.
+
 `v0.2.8`_ (2021-04-29)
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -232,3 +253,4 @@ Miscellanea
 .. _`v0.2.6`: https://github.com/wikimedia/homer/releases/tag/v0.2.6
 .. _`v0.2.7`: https://github.com/wikimedia/homer/releases/tag/v0.2.7
 .. _`v0.2.8`: https://github.com/wikimedia/homer/releases/tag/v0.2.8
+.. _`v0.2.9`: https://github.com/wikimedia/homer/releases/tag/v0.2.9
