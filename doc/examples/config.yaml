@@ -32,6 +32,11 @@ netbox:
   # homer.netbox.BaseNetboxDeviceData.
   plugin: external.module
 
+# Capirca configuration [optional]
+capirca:
+  disabled: true # Optional - disable Capirca acl generation, overriding device definitions (default=false)
+  netbox_definitons: false # Optional - use Netbox as the source for Capirca network definitions (default=true)
+
 # Transpors configuration. [optional]
 transports:
   username: MrFoobar  # username to use for the SSH connection, default to system user. [optional]

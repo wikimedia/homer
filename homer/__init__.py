@@ -282,7 +282,7 @@ class Homer:
                 device_config = []
                 device_data = self._config.get(device)
                 # Render the ACLs using Capirca
-                if 'capirca' in device_data:
+                if 'capirca' in device_data and not self._main_config.get('capirca', {}).get('disabled', False):
                     capirca = CapircaGenerate(self._main_config, device_data['capirca'], self._netbox_api)
                     generated_acls = capirca.generate_acls()
                     if generated_acls:

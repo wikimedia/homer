@@ -34,7 +34,7 @@ class CapircaGenerate():
         definitions_path = Path(self._config['base_paths']['public'], 'definitions')
         self.definitions = naming.Naming(str(definitions_path))
         # If we want to use Netbox as network definition source
-        if self._config['capirca'].get('netbox_definitons', False) and netbox:
+        if self._config.get('capirca', {}).get('netbox_definitons', True) and netbox:
             try:
                 script_result = netbox.extras.scripts.get('capirca.GetHosts').result
                 if str(script_result.status) != 'Completed':
