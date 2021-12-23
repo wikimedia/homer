@@ -61,7 +61,7 @@ class Homer:
             self._netbox_api = pynetbox.api(
                 self._main_config['netbox']['url'], token=self._main_config['netbox']['token'])
             if self._main_config['netbox'].get('plugin', ''):
-                self._device_plugin = import_module(  # type: ignore
+                self._device_plugin = import_module(
                     self._main_config['netbox']['plugin']).NetboxDeviceDataPlugin
 
         devices_all_config = load_yaml_config(

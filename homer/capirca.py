@@ -84,7 +84,7 @@ class CapircaGenerate():
             try:
                 policy_object = policy.ParsePolicy(policy_text, self.definitions,
                                                    optimize=True,
-                                                   shade_check=True,
+                                                   shade_check=False,
                                                    base_dir=policies_dir)
             except policy.ShadingError as e:
                 # Term "hiding" another term
