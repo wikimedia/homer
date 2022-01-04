@@ -12,7 +12,7 @@ INSTALL_REQUIRES = [
     'junos-eznc>=2.2.1,<3',
     'pynetbox>=4.0.6,<=5.3.1',  # pynetbox 6.0.0 introduced backward incompatible changes
     'pyyaml>=3.11',
-    'capirca>=2.0.2',
+    'capirca>=2.0.4',
     'python-dateutil>=2.8.1',
     'pytz>=2021.1'
 ]
