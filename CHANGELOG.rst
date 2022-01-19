@@ -1,6 +1,25 @@
 Homer Changelog
 ---------------
 
+`v0.3.0`_ (2022-01-19)
+^^^^^^^^^^^^^^^^^^^^^^
+
+New features
+""""""""""""
+
+* Added option to disable Capirca ACL generation completely
+
+Bug fixes
+"""""""""
+
+* Capirca: disable shade check
+* Force paramiko to 2.8.1
+
+Miscellanea
+"""""""""""
+
+* Bump Capirca to 2.0.4
+
 `v0.2.9`_ (2021-11-09)
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -254,3 +273,4 @@ Miscellanea
 .. _`v0.2.7`: https://github.com/wikimedia/homer/releases/tag/v0.2.7
 .. _`v0.2.8`: https://github.com/wikimedia/homer/releases/tag/v0.2.8
 .. _`v0.2.9`: https://github.com/wikimedia/homer/releases/tag/v0.2.9
+.. _`v0.3.0`: https://github.com/wikimedia/homer/releases/tag/v0.3.0
