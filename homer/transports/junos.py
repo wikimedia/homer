@@ -155,8 +155,8 @@ class ConnectedDevice:
             pass
         try:
             self._device.close()
-        except TimeoutExpiredError:
-            logger.warning('Unable to close the connection to the device: TimeoutExpiredError')
+        except (RpcTimeoutError, TimeoutExpiredError) as e:
+            logger.warning('Unable to close the connection to the device: %s', e)
 
     def _prepare(self, config: str, ignore_warning: Union[bool, str, List[str]] = False) -> str:
         """Prepare the new configuration to be committed.
