@@ -1,6 +1,21 @@
 Homer Changelog
 ---------------
 
+`v0.4.0`_ (2022-02-15)
+^^^^^^^^^^^^^^^^^^^^^^
+
+New features
+""""""""""""
+
+* netbox: inject in the device metadata also the device status from Netbox so that it can be used to query
+  (i.e. status:active).
+
+Bug fixes
+"""""""""
+
+* transports.junos: catch another timeout exception (``jnpr.junos.exception.RpcTimeoutError``) on close that was raised
+  in some real life usage.
+
 `v0.3.0`_ (2022-01-19)
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -274,3 +289,4 @@ Miscellanea
 .. _`v0.2.8`: https://github.com/wikimedia/homer/releases/tag/v0.2.8
 .. _`v0.2.9`: https://github.com/wikimedia/homer/releases/tag/v0.2.9
 .. _`v0.3.0`: https://github.com/wikimedia/homer/releases/tag/v0.3.0
+.. _`v0.4.0`: https://github.com/wikimedia/homer/releases/tag/v0.4.0
