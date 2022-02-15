@@ -244,6 +244,7 @@ class NetboxInventory:
             'role': device.device_role.slug,
             'site': device.site.slug,
             'type': device.device_type.slug,
+            'status': device.status.value,
             # Inject the Netbox object too to be future-proof and allow to get additional metadata without
             # the need of modifying homer's code. It also allow to use it inside NetboxData.
             'netbox_object': device,

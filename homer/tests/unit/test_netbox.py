@@ -259,7 +259,7 @@ class TestNetboxInventory:
         expected = {}
         for device in self.selected_devices:
             expected_device = {'site': device.site.slug, 'role': device.device_role.slug, 'type': 'typeA',
-                               'netbox_object': device}
+                               'status': device.status.value, 'netbox_object': device}
             if device.primary_ip4 is not None:
                 expected_device['ip4'] = '127.0.0.1'
             if device.primary_ip6 is not None:
