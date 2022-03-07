@@ -84,7 +84,10 @@ class Homer:
 
         self._ignore_warning = self._main_config.get('transports', {}).get('junos', {}).get('ignore_warning', False)
         self._transport_username = self._main_config.get('transports', {}).get('username', '')
-        self._transport_ssh_config = self._main_config.get('transports', {}).get('ssh_config', None)
+        transport_ssh_config = self._main_config.get('transports', {}).get('ssh_config', None)
+        if transport_ssh_config is not None:
+            transport_ssh_config = str(pathlib.Path(transport_ssh_config).expanduser())
+        self._transport_ssh_config = transport_ssh_config
         self._devices = Devices(devices, devices_config, private_devices_config)
         self._renderer = Renderer(self._main_config['base_paths']['public'], self.private_base_path)
         self._output_base_path = pathlib.Path(self._main_config['base_paths']['output'])

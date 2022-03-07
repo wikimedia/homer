@@ -1,3 +1,7 @@
 base_paths:
   public: homer/tests/fixtures/public
   private: homer/tests/fixtures/private
+
+transports:
+  username: user
+  ssh_config: ~/.ssh/config.homer
