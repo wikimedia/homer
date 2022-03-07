@@ -15,6 +15,10 @@ ignore-paths:
   - dist/
   - logs/
 
+profile-validator:
+  disable:
+    - deprecated-tool-code
+
 pep8:
   full: true
   options:
@@ -41,6 +45,7 @@ pylint:
     include-naming-hint: true
     variable-rgx: (([a-z][a-z0-9_]{0,30})|(_[a-z0-9_]*))$
     variable-name-hint: (([a-z][a-z0-9_]{0,30})|(_[a-z0-9_]*))$
+    extension-pkg-whitelist: lxml
 
 pyroma:
   run: true
