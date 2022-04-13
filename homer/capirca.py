@@ -9,6 +9,7 @@ from typing import List, Mapping
 import pynetbox
 
 from capirca.lib import juniper, junipersrx, naming, policy
+from requests.exceptions import RequestException
 
 from homer.exceptions import HomerError
 
@@ -45,7 +46,7 @@ class CapircaGenerate():
                 if runtime < now - timedelta(days=3):
                     logger.warning('Netbox capirca.GetHosts script is > 3 days old.')
                 netbox_definitons = script_result.data.output
-            except pynetbox.RequestError as e:
+            except (pynetbox.RequestError, RequestException) as e:
                 raise HomerError('Make sure homer can reach the capirca.GetHosts script on Netbox.') from e
             # ParseNetworkList expects an array of lines, while Netbox API returns a string with \n
             self.definitions.ParseNetworkList(netbox_definitons.splitlines())
