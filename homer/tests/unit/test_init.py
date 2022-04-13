@@ -106,8 +106,9 @@ class TestHomer:
         ('some diff', False, 'some diff', 99),
         ('some diff', True, '# Non-empty diff omitted, -o/--omit-diff set', 99),
     ))
-    @mock.patch('homer.transports.junos.JunOSDevice')  # pylint: disable=too-many-arguments
-    def test_execute_diff_ok(self, mocked_device, diff, omit_diff, expected, ret, capsys):
+    @mock.patch('homer.transports.junos.JunOSDevice')
+    def test_execute_diff_ok(  # pylint: disable=too-many-arguments
+            self, mocked_device, diff, omit_diff, expected, ret, capsys):
         """It should diff the compiled configuration with the live one."""
         mocked_device.return_value.cu.diff.return_value = diff
         return_code = self.homer.diff('device*', omit_diff=omit_diff)
@@ -161,8 +162,9 @@ class TestHomer:
     @pytest.mark.parametrize('input_value, expected', (
         ('no', 'Commit aborted'),
         ('invalid', 'Too many invalid answers, commit aborted'),
-    ))  # pylint: disable=too-many-arguments
-    def test_execute_commit_abort(self, mocked_device, mocked_isatty, mocked_input, input_value, expected, caplog):
+    ))
+    def test_execute_commit_abort(  # pylint: disable=too-many-arguments
+            self, mocked_device, mocked_isatty, mocked_input, input_value, expected, caplog):
         """It should skip a device and log a warning if the commit is aborted."""
         message = 'commit message'
         mocked_isatty.return_value = True

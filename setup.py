@@ -34,6 +34,7 @@ EXTRAS_REQUIRE = {
         'Sphinx>=1.4.9',
         'types-pkg_resources',
         'types-PyYAML',
+        'types-requests',
     ],
     'prospector': [
         'prospector[with_everything]>=0.12.4',
