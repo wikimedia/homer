@@ -1,6 +1,21 @@
 Homer Changelog
 ---------------
 
+`v0.4.1`_ (2022-04-26)
+^^^^^^^^^^^^^^^^^^^^^^
+
+Minor improvements
+""""""""""""""""""
+
+* homer: expand user paths when reading ``ssh_config`` so that ``~/some_config`` is a supported use case.
+* capirca: catch also requests exceptions that are not catched by pynetbox.
+
+Miscellanea
+"""""""""""
+
+* prospector: update config for latest version.
+* setup.py: add missing types for requests.
+
 `v0.4.0`_ (2022-02-15)
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -290,3 +305,4 @@ Miscellanea
 .. _`v0.2.9`: https://github.com/wikimedia/homer/releases/tag/v0.2.9
 .. _`v0.3.0`: https://github.com/wikimedia/homer/releases/tag/v0.3.0
 .. _`v0.4.0`: https://github.com/wikimedia/homer/releases/tag/v0.4.0
+.. _`v0.4.1`: https://github.com/wikimedia/homer/releases/tag/v0.4.1
