@@ -7,6 +7,7 @@ device1.example.com:
 device2.example.com:
   role: roleB
   site: siteB
+  timeout: 10
   config:
     device_key: device2_value
 

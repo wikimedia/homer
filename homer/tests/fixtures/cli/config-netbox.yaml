@@ -6,3 +6,8 @@ netbox:
   url: https://netbox.example.com
   token: token
   plugin: homer.tests.fixtures.plugins.plugin
+  inventory:
+    device_roles:
+      roleB
+    device_statuses:
+      active

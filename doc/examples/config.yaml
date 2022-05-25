@@ -42,6 +42,7 @@ transports:
   username: MrFoobar  # Username to use for the SSH connection, default to system user. [optional]
   ssh_config: ~/.ssh/config.homer  # Path to a dedicated SSH config for Homer. [optional]
   # The global timeout in seconds to use for all devices. Defaults to 30s [optional]
+  # It can be overriden per device in the devices.yaml configuration file.
   timeout: 30
   # JunOS specific configuration. [optional]
   # See: https://junos-pyez.readthedocs.io/en/2.3.0/jnpr.junos.utils.html#jnpr.junos.utils.config.Config.load

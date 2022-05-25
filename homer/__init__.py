@@ -70,13 +70,15 @@ class Homer:
         devices_config = {fqdn: data.get('config', {}) for fqdn, data in devices_all_config.items()}
 
         netbox_inventory = self._main_config.get('netbox', {}).get('inventory', {})
+        devices = devices_all_config.copy()
+        for data in devices.values():
+            data.pop('config', None)
+
         if netbox_inventory:
-            devices = NetboxInventory(
-                self._netbox_api, netbox_inventory['device_roles'], netbox_inventory['device_statuses']).get_devices()
-        else:
-            devices = devices_all_config.copy()
-            for data in devices.values():
-                data.pop('config', None)
+            # Get the data from Netbox while keeping any existing metadata from the devices.yaml file.
+            # The data from Netbox overrides the existing keys, if both present.
+            devices.update(NetboxInventory(
+                self._netbox_api, netbox_inventory['device_roles'], netbox_inventory['device_statuses']).get_devices())
 
         private_devices_config: Dict = {}
         if self.private_base_path:

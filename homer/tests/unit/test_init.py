@@ -191,7 +191,7 @@ class TestHomerNetbox:
     """Homer class tests with Netbox enabled."""
 
     @pytest.fixture(autouse=True)
-    @mock.patch('homer.pynetbox.api', autospec=True)
+    @mock.patch('homer.pynetbox.api')  # Pynetbox objects lazily resolve API objects, can't use autospec=True
     def setup_method_fixture(self, mocked_pynetbox, tmp_path):
         """Initialize the instance."""
         # pylint: disable=attribute-defined-outside-init
@@ -232,3 +232,31 @@ class TestHomerNetbox:
         """
         with open(str(self.output / 'device2.example.com.out'), encoding='utf-8') as f:
             assert textwrap.dedent(expected).lstrip('\n') == f.read()
+
+    @mock.patch('homer.NetboxDeviceData', autospec=True)
+    @mock.patch('homer.NetboxData', autospec=True)
+    @mock.patch('homer.NetboxInventory', autospec=True)
+    @mock.patch('homer.transports.junos.ConnectedDevice', autospec=True)
+    @pytest.mark.parametrize('device_id, suffix, timeout', (('1', 'A', 30), ('2', 'B', 10)))
+    def test_execute_diff_inventory(self, mocked_connected_device,  # pylint: disable=too-many-arguments
+                                    mocked_netbox_inventory, mocked_netbox_data, mocked_netbox_device_data, device_id,
+                                    suffix, timeout):
+        """It should generate the configuration for the given device, including netbox data."""
+        fqdn = f'device{device_id}.example.com'
+        mocked_connected_device.return_value.commit_check.return_value = (True, '')
+        mocked_netbox_inventory.return_value.get_devices.return_value = {
+            fqdn: {
+                'role': f'role{suffix}',
+                'site': f'site{suffix}',
+                'type': f'type{suffix}',
+                'status': 'active',
+                'netbox_object': mock.MagicMock(),
+            }
+        }
+        mocked_netbox_data.return_value = {'netbox_key': 'netbox_value'}
+        mocked_netbox_device_data.return_value = {'netbox_key': 'netbox_device_value'}
+
+        ret = self.homer.diff(f'device{device_id}*')
+
+        assert ret == 0
+        mocked_connected_device.assert_called_once_with(fqdn, username='', ssh_config=None, timeout=timeout)

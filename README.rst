@@ -23,6 +23,9 @@ Also when using Netbox as inventory for each device additional metadata is expos
   It is exposed to not be a blocker in case some additional data is needed that is not yet exposed by
   Homer explicitely. It could be removed in a future release.
 
+If any metadata is present in the ``YAML`` inventory file when using Netbox as inventory, this additional metadata
+ie exposed too to the templates, with the Netbox values having precedence in case of overlapping keys.
+
 When using Netbox to gather dynamic configuration, it's also possible to write a custom plugin in the form of a
 Python module that implements a class called ``NetboxDeviceDataPlugin`` that inherits from
 `homer.netbox.BaseNetboxDeviceData` and is in the Python ``PATH``.
