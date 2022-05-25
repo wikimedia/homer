@@ -39,8 +39,10 @@ capirca:
 
 # Transpors configuration. [optional]
 transports:
-  username: MrFoobar  # username to use for the SSH connection, default to system user. [optional]
-  ssh_config: ~/.ssh/config.homer  # path to a dedicated SSH config for Homer. [optional]
+  username: MrFoobar  # Username to use for the SSH connection, default to system user. [optional]
+  ssh_config: ~/.ssh/config.homer  # Path to a dedicated SSH config for Homer. [optional]
+  # The global timeout in seconds to use for all devices. Defaults to 30s [optional]
+  timeout: 30
   # JunOS specific configuration. [optional]
   # See: https://junos-pyez.readthedocs.io/en/2.3.0/jnpr.junos.utils.html#jnpr.junos.utils.config.Config.load
   junos:

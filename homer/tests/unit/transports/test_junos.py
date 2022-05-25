@@ -51,7 +51,7 @@ EXPECTED_DIFF = """
 def test_connected_device_ok(mocked_device):
     """It should return a context manager around a connected JunOS device."""
     with junos.connected_device('device1.example.com', username='username') as device:
-        mocked_device.assert_called_once_with('device1.example.com', username='username', ssh_config=None)
+        mocked_device.assert_called_once_with('device1.example.com', username='username', ssh_config=None, timeout=30)
         assert hasattr(device, 'commit')
         assert not mocked_device.return_value.close.called
 
@@ -63,10 +63,10 @@ def test_connected_device_connect_error(mocked_device):
     """It should raise HomerConnectError if there is an error connecting to the device."""
     mocked_device.side_effect = ConnectError('device1.example.com')
     with pytest.raises(HomerConnectError, match='Unable to connect to device1.example.com'):
-        with junos.connected_device('device1.example.com', username='username') as _:
+        with junos.connected_device('device1.example.com', username='username', timeout=10) as _:
             raise RuntimeError  # It should not execute this
 
-        mocked_device.assert_called_once_with('device1.example.com', username='username', ssh_config=None)
+        mocked_device.assert_called_once_with('device1.example.com', username='username', ssh_config=None, timeout=10)
         mocked_device.return_value.close.assert_not_called()
 
 
@@ -105,14 +105,15 @@ class TestConnectedDevice:
         device.commit('config', COMMIT_MESSAGE, callback)
 
         callback.assert_called_once_with('device1.example.com', 'diff')
-        mocked_junos_device.return_value.cu.commit.assert_called_once_with(confirm=2, comment=COMMIT_MESSAGE)
+        mocked_junos_device.return_value.cu.commit.assert_called_once_with(
+            confirm=2, comment=COMMIT_MESSAGE, timeout=30)
 
     @pytest.mark.parametrize('is_retry', (True, False))
     def test_commit_empty_diff(self, mocked_junos_device, is_retry):
         """It should skip the callback on empty diff and based on the is_retry parameter run commit_check or not."""
         mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
         mocked_junos_device.return_value.cu.diff.return_value = None
-        device = junos.ConnectedDevice(self.fqdn)
+        device = junos.ConnectedDevice(self.fqdn, timeout=10)
         callback = mock.Mock()
 
         device.commit('config', COMMIT_MESSAGE, callback, is_retry=is_retry)
@@ -120,7 +121,7 @@ class TestConnectedDevice:
         callback.assert_not_called()
         mocked_junos_device.return_value.cu.commit.assert_not_called()
         if is_retry:
-            mocked_junos_device.return_value.cu.commit_check.assert_called_once_with()
+            mocked_junos_device.return_value.cu.commit_check.assert_called_once_with(timeout=10)
         else:
             mocked_junos_device.return_value.cu.commit_check.assert_not_called()
 
@@ -202,14 +203,15 @@ class TestConnectedDevice:
         mocked_junos_device.return_value.cu.diff.return_value = 'diff'
         mocked_junos_device.return_value.cu.commit.side_effect = CommitError(
             etree.XML(ERROR_RESPONSE.format(insert=insert)))
-        device = junos.ConnectedDevice(self.fqdn)
+        device = junos.ConnectedDevice(self.fqdn, timeout=10)
         callback = mock.Mock()
 
         with pytest.raises(HomerError, match=expected):
             device.commit('config', COMMIT_MESSAGE, callback)
 
         callback.assert_called_once_with('device1.example.com', 'diff')
-        mocked_junos_device.return_value.cu.commit.assert_called_once_with(confirm=2, comment=COMMIT_MESSAGE)
+        mocked_junos_device.return_value.cu.commit.assert_called_once_with(
+            confirm=2, comment=COMMIT_MESSAGE, timeout=10)
 
     def test_commit_generic_error(self, mocked_junos_device):
         """On any other exception it should raise HomerError."""
@@ -223,7 +225,8 @@ class TestConnectedDevice:
             device.commit('config', COMMIT_MESSAGE, callback)
 
         callback.assert_called_once_with('device1.example.com', 'diff')
-        mocked_junos_device.return_value.cu.commit.assert_called_once_with(confirm=2, comment=COMMIT_MESSAGE)
+        mocked_junos_device.return_value.cu.commit.assert_called_once_with(
+            confirm=2, comment=COMMIT_MESSAGE, timeout=30)
 
     def test_commit_check_ok(self, mocked_junos_device):
         """It should commit check the new config and clean rollback the staged one."""
@@ -235,7 +238,7 @@ class TestConnectedDevice:
 
         assert success
         assert diff == 'diff'
-        mocked_junos_device.return_value.cu.commit_check.assert_called_once_with()
+        mocked_junos_device.return_value.cu.commit_check.assert_called_once_with(timeout=30)
         mocked_junos_device.return_value.cu.rollback.assert_called_once_with()
 
     def test_commit_check_commit_error(self, mocked_junos_device, caplog):
@@ -251,7 +254,7 @@ class TestConnectedDevice:
         assert not success
         assert diff == 'diff'
         assert f'Commit check error on {self.fqdn}: Error Message' in caplog.text
-        mocked_junos_device.return_value.cu.commit_check.assert_called_once_with()
+        mocked_junos_device.return_value.cu.commit_check.assert_called_once_with(timeout=30)
         mocked_junos_device.return_value.cu.rollback.assert_called_once_with()
 
     def test_commit_check_generic_error(self, mocked_junos_device, caplog):
@@ -259,14 +262,14 @@ class TestConnectedDevice:
         mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
         mocked_junos_device.return_value.cu.diff.return_value = 'diff'
         mocked_junos_device.return_value.cu.commit_check.side_effect = ValueError('Error Message')
-        device = junos.ConnectedDevice(self.fqdn)
+        device = junos.ConnectedDevice(self.fqdn, timeout=10)
 
         success, diff = device.commit_check('config')
 
         assert not success
         assert diff == 'diff'
         assert f'Failed to commit check on {self.fqdn}: Error Message' in caplog.text
-        mocked_junos_device.return_value.cu.commit_check.assert_called_once_with()
+        mocked_junos_device.return_value.cu.commit_check.assert_called_once_with(timeout=10)
         mocked_junos_device.return_value.cu.rollback.assert_called_once_with()
 
     def test_commit_check_rollback_value_error(self, mocked_junos_device, caplog):
@@ -281,7 +284,7 @@ class TestConnectedDevice:
         assert success
         assert diff == 'diff'
         assert f'Invalid rollback ID on {self.fqdn}: 50' in caplog.text
-        mocked_junos_device.return_value.cu.commit_check.assert_called_once_with()
+        mocked_junos_device.return_value.cu.commit_check.assert_called_once_with(timeout=30)
         mocked_junos_device.return_value.cu.rollback.assert_called_once_with()
 
     def test_commit_check_rollback_error(self, mocked_junos_device, caplog):
@@ -297,7 +300,7 @@ class TestConnectedDevice:
         assert success
         assert diff == 'diff'
         assert f'Failed to rollback on {self.fqdn}: RpcTimeoutError' in caplog.text
-        mocked_junos_device.return_value.cu.commit_check.assert_called_once_with()
+        mocked_junos_device.return_value.cu.commit_check.assert_called_once_with(timeout=30)
         mocked_junos_device.return_value.cu.rollback.assert_called_once_with()
 
     def test_close_ok(self, mocked_junos_device):

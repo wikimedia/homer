@@ -18,6 +18,7 @@ from homer.devices import Device, Devices
 from homer.exceptions import HomerAbortError, HomerConnectError, HomerError, HomerTimeoutError
 from homer.netbox import NetboxData, NetboxDeviceData, NetboxInventory
 from homer.templates import Renderer
+from homer.transports import DEFAULT_TIMEOUT
 from homer.transports.junos import connected_device
 
 
@@ -84,6 +85,7 @@ class Homer:
 
         self._ignore_warning = self._main_config.get('transports', {}).get('junos', {}).get('ignore_warning', False)
         self._transport_username = self._main_config.get('transports', {}).get('username', '')
+        self._transport_timeout = self._main_config.get('transports', {}).get('timeout', DEFAULT_TIMEOUT)
         transport_ssh_config = self._main_config.get('transports', {}).get('ssh_config', None)
         if transport_ssh_config is not None:
             transport_ssh_config = str(pathlib.Path(transport_ssh_config).expanduser())
@@ -190,8 +192,9 @@ class Homer:
             to load the new configuration in the device to generate the diff.
 
         """
+        timeout = device.metadata.get('timeout', self._transport_timeout)
         with connected_device(device.fqdn, username=self._transport_username,
-                              ssh_config=self._transport_ssh_config) as connection:
+                              ssh_config=self._transport_ssh_config, timeout=timeout) as connection:
             return connection.commit_check(device_config, self._ignore_warning)
 
     def _device_commit(self, device: Device, device_config: str,  # noqa: MC0001; pylint: disable=no-self-use
@@ -233,8 +236,9 @@ class Homer:
                 raise HomerAbortError('Too many invalid answers, commit aborted')
 
         is_retry = (attempt != 1)
+        timeout = device.metadata.get('timeout', self._transport_timeout)
         with connected_device(device.fqdn, username=self._transport_username,
-                              ssh_config=self._transport_ssh_config) as connection:
+                              ssh_config=self._transport_ssh_config, timeout=timeout) as connection:
             try:
                 connection.commit(device_config, message, callback, ignore_warning=self._ignore_warning,
                                   is_retry=is_retry)

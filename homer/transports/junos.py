@@ -10,6 +10,7 @@ from jnpr.junos.utils.config import Config
 from ncclient.operations.errors import TimeoutExpiredError
 
 from homer.exceptions import HomerConnectError, HomerError, HomerTimeoutError
+from homer.transports import DEFAULT_TIMEOUT
 
 
 logger = logging.getLogger(__name__)
@@ -19,20 +20,22 @@ DIFF_MOVED_CODE = 33
 
 
 @contextmanager
-def connected_device(fqdn: str, *, username: str = '', ssh_config: Optional[str] = None) -> Iterator['ConnectedDevice']:
+def connected_device(fqdn: str, *, username: str = '', ssh_config: Optional[str] = None,
+                     timeout: int = DEFAULT_TIMEOUT) -> Iterator['ConnectedDevice']:
     """Context manager to perform actions on a connected Juniper device.
 
     Arguments:
         fqdn (str): the FQDN of the Juniper device.
         username (str): the username to use to connect to the Juniper device.
         ssh_config (Optional[str]): an ssh_config file if you want other than ~/.ssh/config
+        timeout (int, optional): the timeout in seconds to use when operating on the device.
 
     Yields:
         ConnectedDevice: the Juniper connected device instance.
 
     """
     try:
-        device = ConnectedDevice(fqdn, username=username, ssh_config=ssh_config)
+        device = ConnectedDevice(fqdn, username=username, ssh_config=ssh_config, timeout=timeout)
     except ConnectError as e:
         raise HomerConnectError(f'Unable to connect to {fqdn}') from e
 
@@ -47,16 +50,19 @@ def connected_device(fqdn: str, *, username: str = '', ssh_config: Optional[str]
 class ConnectedDevice:
     """Juniper transport to manage a JunOS connected device."""
 
-    def __init__(self, fqdn: str, *, username: str = '', ssh_config: Optional[str] = None):
+    def __init__(self, fqdn: str, *, username: str = '', ssh_config: Optional[str] = None,
+                 timeout: int = DEFAULT_TIMEOUT):
         """Initialize the instance and open the connection to the device.
 
         Arguments:
             fqdn (str): the FQDN of the Juniper device.
             username (str): the username to use to connect to the Juniper device.
             ssh_config (Optional[str]): an ssh_config file if you want other than ~/.ssh/config
+            timeout (int, optional): the timeout in seconds to use when operating on the device.
 
         """
         self._fqdn = fqdn
+        self._timeout = timeout
         logger.debug('Connecting to device %s (user %s ssh_config %s)', self._fqdn, username, ssh_config)
         self._device = JunOSDevice(host=self._fqdn, user=username, port=22, ssh_config=ssh_config)
         self._device.open()
@@ -99,8 +105,8 @@ class ConnectedDevice:
         logger.info('Committing the configuration on %s', self._fqdn)
         try:
             if diff:
-                self._device.cu.commit(confirm=2, comment=message)
-            self._device.cu.commit_check()
+                self._device.cu.commit(confirm=2, comment=message, timeout=self._timeout)
+            self._device.cu.commit_check(timeout=self._timeout)
         except RpcTimeoutError as e:
             raise HomerTimeoutError(str(e)) from e
         except CommitError as e:
@@ -135,7 +141,7 @@ class ConnectedDevice:
 
         logger.info('Running commit check on %s', self._fqdn)
         try:
-            self._device.cu.commit_check()
+            self._device.cu.commit_check(timeout=self._timeout)
             success = True
         except CommitError as e:
             logger.error('Commit check error on %s: %s', self._fqdn, ConnectedDevice._parse_commit_error(e))
