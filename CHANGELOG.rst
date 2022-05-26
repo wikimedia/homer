@@ -1,6 +1,25 @@
 Homer Changelog
 ---------------
 
+`v0.5.0`_ (2022-05-26)
+^^^^^^^^^^^^^^^^^^^^^^
+
+New features
+""""""""""""
+
+* transports: allow to set a global timeout in the configuration file for all transports related operations.
+* devices: allow to pass additional metadata
+
+  * When using Netbox as inventory for the device list, the device metadata comes from Netbox and any metadata present
+    in the YAML configuration file ``devices.yaml`` is discarded.
+  * Fix this behaviour loading any additional metadata present in the ``devices.yaml`` file for each device and merge
+    it with the metadata generated from Netbox data.
+  * If a key is present in both sources, the Netbox data has precedence and the data from the ``devices.yaml`` file is
+    silently discarded.
+
+* transports: allow to override the global timeout on a per-device basis through the ``devices.yaml`` file passing
+  additional metadata to the host using the ``timeout`` key.
+
 `v0.4.1`_ (2022-04-26)
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -306,3 +325,4 @@ Miscellanea
 .. _`v0.3.0`: https://github.com/wikimedia/homer/releases/tag/v0.3.0
 .. _`v0.4.0`: https://github.com/wikimedia/homer/releases/tag/v0.4.0
 .. _`v0.4.1`: https://github.com/wikimedia/homer/releases/tag/v0.4.1
+.. _`v0.5.0`: https://github.com/wikimedia/homer/releases/tag/v0.5.0
