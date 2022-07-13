@@ -175,32 +175,29 @@ class TestNetboxDeviceData:
         self.netbox_api.dcim.inventory_items.filter.assert_called_once_with(device_id=123)
 
     def test_get_circuits(self):
-        """It should return all the inventory items of a device."""
-        cable_1 = NetboxObject()
-        cable_1.termination_a_type = 'circuits.circuittermination'
-        cable_1.termination_b = NetboxObject()
-        cable_1.termination_b.name = 'int1'
-        cable_1.termination_a = NetboxObject()
-        cable_1.termination_a.circuit = NetboxObject()
-        cable_1.termination_a.circuit.id = 1
-        cable_2 = NetboxObject()
-        cable_2.termination_a_type = 'unused'
-        cable_2.termination_b_type = 'circuits.circuittermination'
-        cable_2.termination_a = NetboxObject()
-        cable_2.termination_a.name = 'int2'
-        cable_2.termination_b = NetboxObject()
-        cable_2.termination_b.circuit = NetboxObject()
-        cable_2.termination_b.circuit.id = 2
-        cable_3 = NetboxObject()
-        cable_3.termination_a_type = 'unused'
-        cable_3.termination_b_type = 'unused'
+        """It should return all the circuits connected to a device."""
+        interface_1 = NetboxObject()
+        interface_1.link_peer_type = 'circuits.circuittermination'
+        interface_1.name = 'int1'
+        interface_1.link_peer = NetboxObject()
+        interface_1.link_peer.circuit = NetboxObject()
+        interface_1.link_peer.circuit.id = 1
+
+        interface_2 = NetboxObject()
+        interface_2.name = 'int2'
+        interface_2.link_peer_type = 'dcim.frontport'
+        interface_2.link_peer = NetboxObject()
+        interface_2.link_peer.rear_port = interface_1
+
+        interface_3 = NetboxObject()
+        interface_3.link_peer_type = 'dcim.interface'
 
         self.netbox_api.circuits.circuits.get.return_value = {}
-        self.netbox_api.dcim.cables.filter.return_value = [cable_1, cable_2, cable_3]
+        self.netbox_api.dcim.interfaces.filter.return_value = [interface_1, interface_2, interface_3]
 
         assert self.netbox_data['circuits'] == {'int1': {}, 'int2': {}}
-        self.netbox_api.dcim.cables.filter.assert_called_once_with(device_id=123)
-        calls = [mock.call(1), mock.call(2)]
+        self.netbox_api.dcim.interfaces.filter.assert_called_once_with(device_id=123)
+        calls = [mock.call(1), mock.call(1)]
         self.netbox_api.circuits.circuits.get.assert_has_calls(calls)
 
     def test_get_vlans(self):

@@ -102,21 +102,18 @@ class NetboxDeviceData(BaseNetboxDeviceData):
             list: A list of circuits.
 
         """
-        # Because of changes documented in https://github.com/netbox-community/netbox/issues/4812
-        # if an interface is connected to another device using a circuit, the circuit doesn't show up
         device_id = self._device.metadata['netbox_object'].id
-        # Only get the circuits terminating where the device is
         circuits = {}
-
-        # We get all the cables connected to a device
-        for cable in self._api.dcim.cables.filter(device_id=device_id):
-            # And if one side is a circuit we store it, with the local interface name as key
-            if cable.termination_a_type == 'circuits.circuittermination':
-                circuits[cable.termination_b.name] = dict(self._api.circuits.circuits.get(
-                    cable.termination_a.circuit.id))
-            elif cable.termination_b_type == 'circuits.circuittermination':
-                circuits[cable.termination_a.name] = dict(self._api.circuits.circuits.get(
-                    cable.termination_b.circuit.id))
+        for a_int in self._api.dcim.interfaces.filter(device_id=device_id):
+            # b_int is either the patch panel interface facing out or the initial interface
+            # if no patch panel
+            if a_int.link_peer_type == 'dcim.frontport' and a_int.link_peer.rear_port:
+                b_int = a_int.link_peer.rear_port
+            else:
+                # If the patch panel isn't patched through
+                b_int = a_int
+            if b_int.link_peer_type == 'circuits.circuittermination':
+                circuits[a_int.name] = dict(self._api.circuits.circuits.get(b_int.link_peer.circuit.id))
 
         return circuits
 
