@@ -6,7 +6,7 @@ import os
 import re
 
 from copy import deepcopy
-from typing import cast, Dict, Union
+from typing import Dict, Union
 
 import yaml
 
@@ -16,11 +16,9 @@ from homer.exceptions import HomerError
 logger = logging.getLogger(__name__)
 
 
-def ip_network_constructor(loader: yaml.constructor.BaseConstructor, node: str) -> Union[str,
-                                                                                         ipaddress.IPv4Network,
-                                                                                         ipaddress.IPv6Network,
-                                                                                         ipaddress.IPv4Interface,
-                                                                                         ipaddress.IPv6Interface]:
+def ip_network_constructor(loader: yaml.loader.SafeLoader,
+                           node: yaml.ScalarNode) -> Union[str, ipaddress.IPv4Network, ipaddress.IPv6Network,
+                                                           ipaddress.IPv4Interface, ipaddress.IPv6Interface]:
     """Casts a string into a ipaddress.ip_network or ip_interface object.
 
     Arguments:
@@ -32,7 +30,7 @@ def ip_network_constructor(loader: yaml.constructor.BaseConstructor, node: str) 
         str: if not possible, return the original string
 
     """
-    value = str(loader.construct_scalar(cast(yaml.ScalarNode, node)))
+    value = str(loader.construct_scalar(node))
     try:
         return ipaddress.ip_network(value)
     except ValueError:
@@ -43,9 +41,8 @@ def ip_network_constructor(loader: yaml.constructor.BaseConstructor, node: str) 
             return value
 
 
-def ip_address_constructor(loader: yaml.constructor.BaseConstructor, node: str) -> Union[str,
-                                                                                         ipaddress.IPv4Address,
-                                                                                         ipaddress.IPv6Address]:
+def ip_address_constructor(loader: yaml.loader.SafeLoader,
+                           node: yaml.ScalarNode) -> Union[str, ipaddress.IPv4Address, ipaddress.IPv6Address]:
     """Casts a string into a ipaddress.ip_address object.
 
     Arguments:
@@ -57,7 +54,7 @@ def ip_address_constructor(loader: yaml.constructor.BaseConstructor, node: str) 
         str: if not possible, return the original string
 
     """
-    value = str(loader.construct_scalar(cast(yaml.ScalarNode, node)))
+    value = str(loader.construct_scalar(node))
     try:
         return ipaddress.ip_address(value)
     except ValueError as e:
