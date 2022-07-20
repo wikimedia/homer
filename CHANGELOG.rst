@@ -1,6 +1,24 @@
 Homer Changelog
 ---------------
 
+`v0.5.1`_ (2022-07-20)
+^^^^^^^^^^^^^^^^^^^^^^
+
+New features
+""""""""""""
+
+* netbox: _get_circuits: add patch panel support.
+
+  * When an interface is connected to a patch panel, traverse it to expose the "real" z side.
+  * Requires Netbox 3.1 minimum.
+
+Miscellanea
+"""""""""""
+
+* Add Python 3.10 support.
+* config: fix type hints for YAML callables.
+* doc: set default language.
+
 `v0.5.0`_ (2022-05-26)
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -326,3 +344,4 @@ Miscellanea
 .. _`v0.4.0`: https://github.com/wikimedia/homer/releases/tag/v0.4.0
 .. _`v0.4.1`: https://github.com/wikimedia/homer/releases/tag/v0.4.1
 .. _`v0.5.0`: https://github.com/wikimedia/homer/releases/tag/v0.5.0
+.. _`v0.5.1`: https://github.com/wikimedia/homer/releases/tag/v0.5.1
