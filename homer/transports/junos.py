@@ -64,7 +64,8 @@ class ConnectedDevice:
         self._fqdn = fqdn
         self._timeout = timeout
         logger.debug('Connecting to device %s (user %s ssh_config %s)', self._fqdn, username, ssh_config)
-        self._device = JunOSDevice(host=self._fqdn, user=username, port=22, ssh_config=ssh_config)
+        self._device = JunOSDevice(host=self._fqdn, user=username, port=22, ssh_config=ssh_config,
+                                   conn_open_timeout=self._timeout)
         self._device.open()
         self._device.bind(cu=Config)
 

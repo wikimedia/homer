@@ -82,7 +82,8 @@ class TestConnectedDevice:
     def test_init(self, mocked_junos_device):
         """It should connect to the device."""
         junos.ConnectedDevice(self.fqdn)
-        mocked_junos_device.assert_called_once_with(host=self.fqdn, user='', port=22, ssh_config=None)
+        mocked_junos_device.assert_called_once_with(host=self.fqdn, user='', port=22, ssh_config=None,
+                                                    conn_open_timeout=30)
 
     def test_diff_ok(self, mocked_junos_device):
         """It should print a colored diff of the config."""
