@@ -1,0 +1,6 @@
+[github]
+repository = homer
+
+[pypi]
+name = homer
+wheels_prefix = homer
