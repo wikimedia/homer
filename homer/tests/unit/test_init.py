@@ -201,7 +201,9 @@ class TestHomerNetbox:
 
     def test_init(self):
         """The instance should have setup the Netbox API."""
-        self.mocked_pynetbox.assert_called_once_with('https://netbox.example.com', token='token')  # nosec
+        self.mocked_pynetbox.assert_called_once_with('https://netbox.example.com',  # nosec
+                                                     token='token',
+                                                     threading=True)
 
     @mock.patch('homer.NetboxDeviceData', autospec=True)
     @mock.patch('homer.NetboxData', autospec=True)
