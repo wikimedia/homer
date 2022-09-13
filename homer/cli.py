@@ -5,7 +5,7 @@ import sys
 
 from typing import Optional
 
-from homer import Homer
+from homer import __version__, Homer
 from homer.config import load_yaml_config
 
 
@@ -24,6 +24,7 @@ def argument_parser() -> argparse.ArgumentParser:
     group.add_argument('-q', '--quiet', action='store_const', const=logging.WARN, dest='loglevel',
                        help='Silent mode, only log warnings',)
     parser.add_argument('-c', '--config', default='/etc/homer/config.yaml', help='Main configuration file to load.')
+    parser.add_argument('--version', action='version', version=f'%(prog)s {__version__}')
     parser.add_argument('query', help='Select which devices to target')
 
     subparsers = parser.add_subparsers(help='Action to perform: generate, diff, commit', dest='action')

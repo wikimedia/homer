@@ -1,6 +1,7 @@
 """CLI module tests."""
 import argparse
 
+import pytest
 import yaml
 
 from homer import cli
@@ -11,6 +12,15 @@ from homer.tests import get_fixture_path
 def test_argument_parser():
     """It should return an ArgumentParser parser."""
     assert isinstance(cli.argument_parser(), argparse.ArgumentParser)
+
+
+def test_version(capsys):
+    """It should return the version and exit."""
+    with pytest.raises(SystemExit, match='0'):
+        cli.main(['--version'])
+
+    out, _ = capsys.readouterr()
+    assert cli.__version__ in out
 
 
 def test_main(tmp_path):
