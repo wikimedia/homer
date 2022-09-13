@@ -1,6 +1,29 @@
 Homer Changelog
 ---------------
 
+`v0.6.0`_ (2022-09-13)
+^^^^^^^^^^^^^^^^^^^^^^
+
+Minor improvements
+""""""""""""""""""
+
+* dependencies: bump ``pynetbox`` to ``~= 6.6`` to enable the use of more recent features (`T310745`_).
+* netbox: enable pynetbox threading (`T311486`_).
+
+Bug fixes
+"""""""""
+
+* transports.junos: fix upstream regression in the JunOS Python library ``py-junos-eznc`` that requires to always set
+  the ``conn_open_timeout`` parameter when creating a new ``Device`` instance.
+
+Miscellanea
+"""""""""""
+
+* Add WMF-specific configuration file to be used by the script that makes new releases.
+* flake8: move all flake8 config to ``setup.cfg`` as the configuration is no longer read from multiple files.
+* tox: add the ``--no-external-config`` flag to prospector in order to ensure that the provided configuration is the
+  only one used independenly of existing alternative configurations locally.
+
 `v0.5.1`_ (2022-07-20)
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -327,6 +350,8 @@ Miscellanea
 .. _`T257392`: https://phabricator.wikimedia.org/T257392
 .. _`T260769`: https://phabricator.wikimedia.org/T260769
 .. _`T273865`: https://phabricator.wikimedia.org/T273865
+.. _`T310745`: https://phabricator.wikimedia.org/T310745
+.. _`T311486`: https://phabricator.wikimedia.org/T311486
 
 .. _`v0.1.0`: https://github.com/wikimedia/operations-software-homer/releases/tag/v0.1.0
 .. _`v0.1.1`: https://github.com/wikimedia/operations-software-homer/releases/tag/v0.1.1
@@ -345,3 +370,4 @@ Miscellanea
 .. _`v0.4.1`: https://github.com/wikimedia/homer/releases/tag/v0.4.1
 .. _`v0.5.0`: https://github.com/wikimedia/homer/releases/tag/v0.5.0
 .. _`v0.5.1`: https://github.com/wikimedia/homer/releases/tag/v0.5.1
+.. _`v0.6.0`: https://github.com/wikimedia/homer/releases/tag/v0.6.0
