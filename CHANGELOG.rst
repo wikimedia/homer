@@ -1,6 +1,19 @@
 Homer Changelog
 ---------------
 
+`v0.6.1`_ (2022-09-14)
+^^^^^^^^^^^^^^^^^^^^^^
+
+Bug fixes
+"""""""""
+
+* homer: fix device configuration merge when using both file configuration and Netbox inventory.
+
+Miscellanea
+"""""""""""
+
+* cli: add ``--version`` command line argument.
+
 `v0.6.0`_ (2022-09-13)
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -371,3 +384,4 @@ Miscellanea
 .. _`v0.5.0`: https://github.com/wikimedia/homer/releases/tag/v0.5.0
 .. _`v0.5.1`: https://github.com/wikimedia/homer/releases/tag/v0.5.1
 .. _`v0.6.0`: https://github.com/wikimedia/homer/releases/tag/v0.6.0
+.. _`v0.6.1`: https://github.com/wikimedia/homer/releases/tag/v0.6.1
