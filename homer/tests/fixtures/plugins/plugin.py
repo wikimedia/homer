@@ -2,7 +2,7 @@
 from homer.netbox import BaseNetboxDeviceData
 
 
-class NetboxDeviceDataPlugin(BaseNetboxDeviceData):  # pylint: disable=too-many-ancestors
+class NetboxDeviceDataPlugin(BaseNetboxDeviceData):
     """Custom class to mangle device-specific Netbox data."""
 
     def _get_netbox_device_plugin(self) -> str:

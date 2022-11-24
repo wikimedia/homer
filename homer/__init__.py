@@ -242,7 +242,7 @@ class Homer:
             else:
                 raise HomerAbortError('Too many invalid answers, commit aborted')
 
-        is_retry = (attempt != 1)
+        is_retry = attempt != 1
         timeout = device.metadata.get('timeout', self._transport_timeout)
         with connected_device(device.fqdn, username=self._transport_username,
                               ssh_config=self._transport_ssh_config, timeout=timeout) as connection:
