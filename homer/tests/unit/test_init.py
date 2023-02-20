@@ -239,10 +239,10 @@ class TestHomerNetbox:
     @mock.patch('homer.NetboxData', autospec=True)
     @mock.patch('homer.NetboxInventory', autospec=True)
     @mock.patch('homer.transports.junos.ConnectedDevice', autospec=True)
-    @pytest.mark.parametrize('device_id, suffix, timeout', (('1', 'A', 30), ('2', 'B', 10)))
+    @pytest.mark.parametrize('device_id, suffix, port, timeout', (('1', 'A', 22, 30), ('2', 'B', 2222, 10)))
     def test_execute_diff_inventory(self, mocked_connected_device,  # pylint: disable=too-many-arguments
                                     mocked_netbox_inventory, mocked_netbox_data, mocked_netbox_device_data, device_id,
-                                    suffix, timeout):
+                                    suffix, port, timeout):
         """It should generate the configuration for the given device, including netbox data."""
         fqdn = f'device{device_id}.example.com'
         mocked_connected_device.return_value.commit_check.return_value = (True, '')
@@ -261,4 +261,5 @@ class TestHomerNetbox:
         ret = self.homer.diff(f'device{device_id}*')
 
         assert ret == 0
-        mocked_connected_device.assert_called_once_with(fqdn, username='', ssh_config=None, timeout=timeout)
+        mocked_connected_device.assert_called_once_with(fqdn, username='', ssh_config=None,
+                                                        port=port, timeout=timeout)

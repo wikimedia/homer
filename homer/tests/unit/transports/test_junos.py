@@ -51,7 +51,8 @@ EXPECTED_DIFF = """
 def test_connected_device_ok(mocked_device):
     """It should return a context manager around a connected JunOS device."""
     with junos.connected_device('device1.example.com', username='username') as device:
-        mocked_device.assert_called_once_with('device1.example.com', username='username', ssh_config=None, timeout=30)
+        mocked_device.assert_called_once_with('device1.example.com', username='username', ssh_config=None,
+                                              port=22, timeout=30)
         assert hasattr(device, 'commit')
         assert not mocked_device.return_value.close.called
 
