@@ -1,6 +1,19 @@
 Homer Changelog
 ---------------
 
+`v0.6.2`_ (2023-04-05)
+^^^^^^^^^^^^^^^^^^^^^^
+
+New features
+""""""""""""
+
+* transports: Allow different SSH port than default 22.
+
+Miscellanea
+"""""""""""
+
+* Remove support for Python 3.7 and 3.8.
+
 `v0.6.1`_ (2022-09-14)
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -385,3 +398,4 @@ Miscellanea
 .. _`v0.5.1`: https://github.com/wikimedia/homer/releases/tag/v0.5.1
 .. _`v0.6.0`: https://github.com/wikimedia/homer/releases/tag/v0.6.0
 .. _`v0.6.1`: https://github.com/wikimedia/homer/releases/tag/v0.6.1
+.. _`v0.6.2`: https://github.com/wikimedia/homer/releases/tag/v0.6.2
