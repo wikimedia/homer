@@ -38,6 +38,10 @@ def test_load_yaml_config_ipaddress_objects():
     assert isinstance(config['interfacev6'], ipaddress.IPv6Interface)
     assert isinstance(config['non_parsable_interface'], str)
     assert isinstance(config['non_parsable_ip'], str)
+    assert isinstance(config['quoted_ipv4'], ipaddress.IPv4Address)
+    assert isinstance(config['quoted_ipv6'], ipaddress.IPv6Address)
+    assert isinstance(config['quoted_networkv4'], ipaddress.IPv4Network)
+    assert isinstance(config['quoted_networkv6'], ipaddress.IPv6Network)
 
 
 def test_hierarchical_config_get_no_private():

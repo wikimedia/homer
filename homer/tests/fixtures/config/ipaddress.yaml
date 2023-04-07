@@ -6,3 +6,8 @@ interfacev4: 10.0.0.1/24
 interfacev6: fd00::1/64
 non_parsable_interface: 10.0.0.999/24
 non_parsable_ip: 10.0.0.999
+# See https://github.com/yaml/pyyaml/issues/457
+quoted_ipv4: !ip_address "10.0.0.1"
+quoted_ipv6: ! "::1"
+quoted_networkv4: ! "10.0.0.0/24"
+quoted_networkv6: !ip_network "::/0"
