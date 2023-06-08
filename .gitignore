@@ -1,5 +1,4 @@
 /build/
-/.venv/
 /output/
 /.cache/
 /.coverage
@@ -7,6 +6,8 @@
 /.mypy_cache/
 /.pytest_cache/
 /.tox/
+/.venv/
+/.vscode/
 /dist/
 /doc/build/
 /homer_plugins
