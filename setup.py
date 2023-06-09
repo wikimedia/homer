@@ -29,6 +29,7 @@ EXTRAS_REQUIRE = {
         'pytest-cov>=1.8.0',
         'pytest-xdist>=1.15.0',
         'pytest>=3.3.0',
+        'requests-mock',
         'sphinx_rtd_theme>=0.1.6',
         'sphinx-argparse>=0.1.15',
         'Sphinx>=1.4.9',

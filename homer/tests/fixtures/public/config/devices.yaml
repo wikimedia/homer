@@ -1,10 +1,12 @@
 device1.example.com:
+  id: 1
   role: roleA
   site: siteA
   config:
     device_key: device1_value
 
 device2.example.com:
+  id: 2
   role: roleB
   site: siteB
   port: 2222
@@ -13,6 +15,7 @@ device2.example.com:
     device_key: device2_value
 
 another.example.com:
+  id: 3
   role: roleA
   site: siteB
   config:
@@ -25,5 +28,6 @@ invalid.example.com:
     device_key: invalid_value
 
 valid.example.com:
+  id: 4
   role: roleC
   site: siteC

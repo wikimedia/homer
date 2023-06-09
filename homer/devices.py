@@ -4,17 +4,17 @@ import logging
 
 from collections import UserDict
 from operator import attrgetter
-from typing import List, Mapping, NamedTuple, Optional
+from typing import List, Mapping, MutableMapping, NamedTuple, Optional
 
 
-Device = NamedTuple('Device', [('fqdn', str), ('metadata', Mapping), ('config', Mapping), ('private', Mapping)])
+Device = NamedTuple('Device', [('fqdn', str), ('metadata', MutableMapping), ('config', Mapping), ('private', Mapping)])
 logger = logging.getLogger(__name__)
 
 
 class Devices(UserDict):
     """Collection of devices, accessible by FQDN as a dict or role and site via dedicated accessors."""
 
-    def __init__(self, devices: Mapping[str, Mapping[str, str]], devices_config: Mapping[str, Mapping],
+    def __init__(self, devices: Mapping[str, MutableMapping[str, str]], devices_config: Mapping[str, Mapping],
                  private_config: Optional[Mapping[str, Mapping]] = None):
         """Initialize the instance.
 

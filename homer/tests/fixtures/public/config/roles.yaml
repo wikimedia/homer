@@ -1,9 +1,11 @@
 roleA:
+  id: 1
   role_key: roleA_value
   site_key: roleA_value
   device_key: roleA_value
 
 roleB:
+  id: 2
   role_key: roleB_value
   site_key: roleB_value
   device_key: roleB_value

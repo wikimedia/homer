@@ -1,7 +1,9 @@
 siteA:
+  id: 1
   site_key: siteA_value
   device_key: siteA_value
 
 siteB:
+  id: 2
   site_key: siteB_value
   device_key: siteB_value

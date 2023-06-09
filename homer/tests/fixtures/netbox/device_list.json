@@ -1,0 +1,69 @@
+{
+    "data": {
+        "device_list": [
+            {
+                "id": 123,
+                "name": "device1",
+                "status": "ACTIVE",
+                "platform": {
+                    "slug": "linux"
+                },
+                "site": {
+                    "slug": "siteA"
+                },
+                "device_type": {
+                    "slug": "typeA"
+                },
+                "device_role": {
+                    "slug": "roleA"
+                },
+                "primary_ip4": {
+                    "address": "192.0.2.42/24",
+                    "dns_name": "device1.example.com"
+                }
+            },
+            {
+                "id": 123,
+                "name": "device2",
+                "status": "STAGED",
+                "platform": {
+                    "slug": "linux"
+                },
+                "site": {
+                    "slug": "siteA"
+                },
+                "device_type": {
+                    "slug": "typeA"
+                },
+                "device_role": {
+                    "slug": "roleA"
+                },
+                "primary_ip6": {
+                    "address": "2001:db8::42/64",
+                    "dns_name": "device2.example.com"
+                }
+            },
+            {
+                "id": 123,
+                "name": "device1-vc1",
+                "status": "ACTIVE",
+                "platform": {
+                    "slug": "linux"
+                },
+                "site": {
+                    "slug": "siteA"
+                },
+                "device_type": {
+                    "slug": "typeA"
+                },
+                "device_role": {
+                    "slug": "roleA"
+                },
+                "primary_ip4": {
+                    "address": "192.0.2.42/24",
+                    "dns_name": "device1-vc1.example.com"
+                }
+            }
+        ]
+    }
+}

@@ -1,6 +1,8 @@
 """__init__ module tests."""
+import json
 import textwrap
 
+from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -192,11 +194,17 @@ class TestHomerNetbox:
 
     @pytest.fixture(autouse=True)
     @mock.patch('homer.pynetbox.api')  # Pynetbox objects lazily resolve API objects, can't use autospec=True
-    def setup_method_fixture(self, mocked_pynetbox, tmp_path):
+    def setup_method_fixture(self, mocked_pynetbox, requests_mock, tmp_path):
         """Initialize the instance."""
         # pylint: disable=attribute-defined-outside-init
         self.output, self.config = setup_tmp_path('config-netbox.yaml', tmp_path)
         self.mocked_pynetbox = mocked_pynetbox
+        self.requests_mock = requests_mock
+        device_list = json.loads(
+            Path(get_fixture_path('netbox', 'device_list.json')).read_text(encoding="UTF-8")
+        )
+        self.requests_mock.post('/graphql/', json=device_list)  # nosec
+
         self.homer = homer.Homer(self.config)
 
     def test_init(self):
@@ -215,18 +223,20 @@ class TestHomerNetbox:
         ret = self.homer.generate('device*')
 
         assert ret == 0
-        assert sorted(get_generated_files(self.output)) == ['device1.example.com.out', 'device2.example.com.out']
+        assert sorted(get_generated_files(self.output)) == ['device1-vc1.example.com.out',
+                                                            'device1.example.com.out',
+                                                            'device2.example.com.out']
         expected = """
-            roleB;
-            siteB;
+            roleA;
+            siteA;
             device2.example.com;
             common_value;
-            roleB_value;
-            siteB_value;
+            roleA_value;
+            siteA_value;
             device2_value;
             common_private_value;
-            roleB_private_value;
-            siteB_private_value;
+            roleA_private_value;
+            siteA_private_value;
             device2_private_value;
             netbox_value;
             netbox_device_value;
@@ -239,12 +249,13 @@ class TestHomerNetbox:
     @mock.patch('homer.NetboxData', autospec=True)
     @mock.patch('homer.NetboxInventory', autospec=True)
     @mock.patch('homer.transports.junos.ConnectedDevice', autospec=True)
-    @pytest.mark.parametrize('device_id, suffix, port, timeout', (('1', 'A', 22, 30), ('2', 'B', 2222, 10)))
+    @pytest.mark.parametrize('name, suffix, port, timeout', (('device1', 'A', 22, 30),
+                                                             ('device2', 'B', 2222, 10)))
     def test_execute_diff_inventory(self, mocked_connected_device,  # pylint: disable=too-many-arguments
-                                    mocked_netbox_inventory, mocked_netbox_data, mocked_netbox_device_data, device_id,
+                                    mocked_netbox_inventory, mocked_netbox_data, mocked_netbox_device_data, name,
                                     suffix, port, timeout):
         """It should generate the configuration for the given device, including netbox data."""
-        fqdn = f'device{device_id}.example.com'
+        fqdn = f'{name}.example.com'
         mocked_connected_device.return_value.commit_check.return_value = (True, '')
         mocked_netbox_inventory.return_value.get_devices.return_value = {
             fqdn: {
@@ -258,7 +269,7 @@ class TestHomerNetbox:
         mocked_netbox_data.return_value = {'netbox_key': 'netbox_value'}
         mocked_netbox_device_data.return_value = {'netbox_key': 'netbox_device_value'}
 
-        ret = self.homer.diff(f'device{device_id}*')
+        ret = self.homer.diff(f'{fqdn}')
 
         assert ret == 0
         mocked_connected_device.assert_called_once_with(fqdn, username='', ssh_config=None,

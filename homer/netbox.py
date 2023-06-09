@@ -3,9 +3,12 @@ import ipaddress
 import logging
 
 from collections import UserDict
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 import pynetbox
+import requests
+
+from requests.exceptions import RequestException
 
 from homer.devices import Device
 from homer.exceptions import HomerError
@@ -63,6 +66,7 @@ class BaseNetboxDeviceData(BaseNetboxData):
         """
         super().__init__(api)
         self._device = device
+        self._device.metadata['netbox_object'] = api.dcim.devices.get(id=device.metadata['id'])
 
 
 class NetboxData(BaseNetboxData):
@@ -150,16 +154,16 @@ class NetboxDeviceData(BaseNetboxDeviceData):
 class NetboxInventory:
     """Use Netbox as inventory to gather the list of devices to manage."""
 
-    def __init__(self, api: pynetbox.api, device_roles: Sequence[str], device_statuses: Sequence[str]):
+    def __init__(self, config: dict, device_roles: Sequence[str], device_statuses: Sequence[str]):
         """Initialize the instance.
 
         Arguments:
-            api (pynetbox.api): the Netbox API instance.
+            config (dict): Homer's configuration section about Netbox
             device_roles (list): a sequence of Netbox device role slug strings to filter the devices.
             device_statuses (list): a sequence of Netbox device status label or value strings to filter the devices.
 
         """
-        self._api = api
+        self._config = config
         self._device_roles = device_roles
         self._device_statuses = [status.lower() for status in device_statuses]
 
@@ -170,36 +174,39 @@ class NetboxInventory:
             dict: a dictionary with the device FQDN as keys and a metadata dictionary as value.
 
         """
+        # TODO maybe remove this class
         devices = self._get_devices()
-        devices.update(self._get_virtual_chassis_devices())
         return devices
 
-    def _get_virtual_chassis_devices(self) -> Dict[str, Dict[str, str]]:
-        """Get the devices part of virtual chassis according to the configuration.
+    def _gql_execute(self, query: str, variables: Optional[dict] = None) -> dict:
+        """Parse the query into a gql query, execute and return the results.
 
-        Returns:
-            dict: a dictionary with the device FQDN as keys and a metadata dictionary as value.
+        Arguments:
+            query: a string representing the gql query
+            variables: A list of variables to send
+
+        Results:
+            dict: the results
 
         """
-        devices: Dict[str, Dict[str, str]] = {}
-        for vc in self._api.dcim.virtual_chassis.all():
-            device = vc.master
-            if not vc.domain:
-                logger.error(
-                    'Unable to determine hostname for virtual chassis of %s, domain property not set, skipping.',
-                    device.name
-                )
-                continue
-            if device.status.value not in self._device_statuses:
-                logger.debug('Skipping device %s with status %s', device.name, device.status.label)
-                continue
-            if device.device_role.slug not in self._device_roles:
-                logger.debug('Skipping device %s with role %s', device.name, device.device_role.slug)
-                continue
-
-            devices[vc.domain] = NetboxInventory._get_device_data(device)
-
-        return devices
+        data: dict[str, Union[str, dict]] = {"query": query}
+        if variables is not None:
+            data["variables"] = variables
+        try:
+            session = requests.Session()
+            session.headers.update(
+                {"Authorization": f"Token {self._config['token']}",
+                 "User-Agent": "Homer"}
+            )
+            response = session.post(f"{self._config['url']}/graphql/", json=data, timeout=15)
+            response.raise_for_status()
+            return response.json()['data']
+        except RequestException as error:
+            raise HomerError(
+                f"failed to fetch netbox data: {error}\n{response.text}"
+            ) from error
+        except KeyError as error:
+            raise HomerError(f"No data found in GraphQL response: {error}") from error
 
     def _get_devices(self) -> Dict[str, Dict[str, str]]:
         """Get the devices based on role, status and virtual chassis membership.
@@ -208,49 +215,55 @@ class NetboxInventory:
             dict: a dictionary with the device FQDN as keys and a metadata dictionary as value.
 
         """
+        device_list_gql = """
+        query ($role: [String], $status: [String]) {
+            device_list(role: $role, status: $status) {
+                id
+                name
+                status
+                platform { slug }
+                site { slug }
+                device_type { slug }
+                device_role { slug }
+                primary_ip4 {
+                    address
+                    dns_name
+                }
+                primary_ip6 {
+                    address
+                    dns_name
+                }
+            }
+        }
+        """
         devices: Dict[str, Dict[str, str]] = {}
-        for device in self._api.dcim.devices.filter(
-                role=self._device_roles, status=self._device_statuses, virtual_chassis_member=False):
-            if device.primary_ip4 is not None and device.primary_ip4.dns_name:
-                fqdn = device.primary_ip4.dns_name
-            elif device.primary_ip6 is not None and device.primary_ip6.dns_name:
-                fqdn = device.primary_ip6.dns_name
-            elif device.platform is None:
-                logger.debug('Device %s missing FQDN and Platform, assuming non-manageable, skipping.', device.name)
-                continue
+
+        variables = {"role": self._device_roles, "status": self._device_statuses}
+        devices_gql = self._gql_execute(device_list_gql, variables)['device_list']
+
+        for device in devices_gql:
+            if (device.get('primary_ip4') and device['primary_ip4'].get('dns_name')):
+                fqdn = device['primary_ip4']['dns_name']
+            elif (device.get('primary_ip6') and device['primary_ip6'].get('dns_name')):
+                fqdn = device['primary_ip6']['dns_name']
             else:
-                logger.error('Unable to determine FQDN for device %s, skipping.', device.name)
+                logger.debug('Unable to determine FQDN for device %s, skipping.', device['name'])
                 continue
 
-            devices[fqdn] = NetboxInventory._get_device_data(device)
+            metadata = {
+                'id': device['id'],
+                'role': device['device_role']['slug'],
+                'site': device['site']['slug'],
+                'type': device['device_type']['slug'],
+                'status': device['status'].lower(),
+            }
+
+            # Convert Netbox interfaces into IPs
+            if device.get('primary_ip4') is not None:
+                metadata['ip4'] = ipaddress.ip_interface(device['primary_ip4']['address']).ip.compressed
+            if device.get('primary_ip6') is not None:
+                metadata['ip6'] = ipaddress.ip_interface(device['primary_ip6']['address']).ip.compressed
+
+            devices[fqdn] = metadata
 
         return devices
-
-    @staticmethod
-    def _get_device_data(device: pynetbox.models.dcim.Devices) -> Dict[str, str]:
-        """Return the metadata needed from a Netbox device instance.
-
-        Arguments:
-            device (pynetbox.models.dcim.Devices): the Netbox device instance.
-
-        Returns:
-            dict: the dictionary with the device metadata.
-
-        """
-        metadata = {
-            'role': device.device_role.slug,
-            'site': device.site.slug,
-            'type': device.device_type.slug,
-            'status': device.status.value,
-            # Inject the Netbox object too to be future-proof and allow to get additional metadata without
-            # the need of modifying homer's code. It also allow to use it inside NetboxData.
-            'netbox_object': device,
-        }
-
-        # Convert Netbox interfaces into IPs
-        if device.primary_ip4 is not None:
-            metadata['ip4'] = ipaddress.ip_interface(device.primary_ip4.address).ip.compressed
-        if device.primary_ip6 is not None:
-            metadata['ip6'] = ipaddress.ip_interface(device.primary_ip6.address).ip.compressed
-
-        return metadata

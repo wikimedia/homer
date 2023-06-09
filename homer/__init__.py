@@ -78,7 +78,9 @@ class Homer:
             # Get the data from Netbox while keeping any existing metadata from the devices.yaml file.
             # The data from Netbox overrides the existing keys for each device, if both present.
             netbox_devices = NetboxInventory(
-                self._netbox_api, netbox_inventory['device_roles'], netbox_inventory['device_statuses']).get_devices()
+                self._main_config['netbox'],
+                netbox_inventory['device_roles'],
+                netbox_inventory['device_statuses']).get_devices()
             for fqdn, data in netbox_devices.items():
                 if fqdn in devices:
                     devices[fqdn].update(data)
@@ -310,6 +312,7 @@ class Homer:
                         'global': netbox_data,
                         'device': NetboxDeviceData(self._netbox_api, device),
                     }
+
                     if self._device_plugin is not None:
                         device_data['netbox']['device_plugin'] = self._device_plugin(self._netbox_api, device)
                 # Render the Jinja templates based on yaml + netbox data
