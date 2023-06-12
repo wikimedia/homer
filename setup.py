@@ -13,7 +13,7 @@ INSTALL_REQUIRES = [
     'paramiko<=2.8.1',  # T299482
     'pynetbox~= 6.6',
     'pyyaml>=3.11',
-    'capirca>=2.0.4',
+    'aerleon',
     'python-dateutil>=2.8.1',
     'pytz>=2021.1'
 ]

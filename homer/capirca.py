@@ -8,7 +8,8 @@ from typing import List, Mapping
 
 import pynetbox
 
-from capirca.lib import juniper, junipersrx, naming, policy
+from aerleon.lib import juniper, junipersrx, naming, policy
+from aerleon.lib import yaml as aerleon_yaml
 from requests.exceptions import RequestException
 
 from homer.exceptions import HomerError
@@ -33,7 +34,7 @@ class CapircaGenerate():
         self._public_policies_dir = Path(self._config['base_paths']['public'], 'policies')
         self._private_base_path = self._config['base_paths'].get('private', None)
         definitions_path = Path(self._config['base_paths']['public'], 'definitions')
-        self.definitions = naming.Naming(str(definitions_path))
+        self.definitions = naming.Naming(naming_dir=str(definitions_path))
         # If we want to use Netbox as network definition source
         if self._config.get('capirca', {}).get('netbox_definitons', True) and netbox:
             try:
@@ -67,10 +68,10 @@ class CapircaGenerate():
         # Iterate over all policies defined for a given device
         for policy_name in self._device_policies:
             # We don't know yet if the files below exist
-            public_policy_file = Path(self._public_policies_dir, policy_name + '.pol')
+            public_policy_file = Path(self._public_policies_dir, policy_name + '.yaml')
             private_policy_file = Path()
             if self._private_base_path:
-                private_policy_file = Path(private_policies_dir, policy_name + '.pol')
+                private_policy_file = Path(private_policies_dir, policy_name + '.yaml')
             # If same file in both private and public, prefer private
             if private_policy_file.is_file():
                 policy_file = private_policy_file
@@ -81,12 +82,13 @@ class CapircaGenerate():
             else:
                 failures.append(f"Can't find Capirca policy file {policy_name}.")
                 continue
-            policy_text = policy_file.read_text(encoding='utf-8')
             try:
-                policy_object = policy.ParsePolicy(policy_text, self.definitions,
-                                                   optimize=True,
-                                                   shade_check=False,
-                                                   base_dir=policies_dir)
+                policy_object = aerleon_yaml.ParseFile(str(policy_file),
+                                                       base_dir=policies_dir,
+                                                       definitions=self.definitions,
+                                                       optimize=True,
+                                                       shade_check=False,
+                                                       )
             except policy.ShadingError as e:
                 # Term "hiding" another term
                 failures.append(f"Shading errors for {policy_name}: {e}.")
