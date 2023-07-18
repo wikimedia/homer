@@ -1,6 +1,24 @@
 Homer Changelog
 ---------------
 
+`v0.6.3`_ (2023-07-18)
+^^^^^^^^^^^^^^^^^^^^^^
+
+Major improvements
+""""""""""""""""""
+
+* NetboxInventory: use GraphQL for performance improvements
+* Replace Capirca with Aerleon
+
+Miscellanea
+"""""""""""
+
+* Add Python 3.11 support.
+* tox.ini: make it compatible with tox 4.x
+* tests: check also a special syntax for quotes
+* Ignore .vscode and support Python 3.11 in Tox
+
+
 `v0.6.2`_ (2023-04-05)
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -378,6 +396,8 @@ Miscellanea
 .. _`T273865`: https://phabricator.wikimedia.org/T273865
 .. _`T310745`: https://phabricator.wikimedia.org/T310745
 .. _`T311486`: https://phabricator.wikimedia.org/T311486
+.. _`T310577`: https://phabricator.wikimedia.org/T310577
+.. _`T337082`: https://phabricator.wikimedia.org/T337082
 
 .. _`v0.1.0`: https://github.com/wikimedia/operations-software-homer/releases/tag/v0.1.0
 .. _`v0.1.1`: https://github.com/wikimedia/operations-software-homer/releases/tag/v0.1.1
@@ -399,3 +419,4 @@ Miscellanea
 .. _`v0.6.0`: https://github.com/wikimedia/homer/releases/tag/v0.6.0
 .. _`v0.6.1`: https://github.com/wikimedia/homer/releases/tag/v0.6.1
 .. _`v0.6.2`: https://github.com/wikimedia/homer/releases/tag/v0.6.2
+.. _`v0.6.3`: https://github.com/wikimedia/homer/releases/tag/v0.6.3
