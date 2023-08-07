@@ -4,19 +4,19 @@ Homer Changelog
 `v0.6.3`_ (2023-07-18)
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Major improvements
+Minor improvements
 """"""""""""""""""
 
-* NetboxInventory: use GraphQL for performance improvements
-* Replace Capirca with Aerleon
+* NetboxInventory: use GraphQL for performance improvements (`T310577`_).
+* Replace Capirca with Aerleon (`T337082`_).
 
 Miscellanea
 """""""""""
 
 * Add Python 3.11 support.
-* tox.ini: make it compatible with tox 4.x
-* tests: check also a special syntax for quotes
-* Ignore .vscode and support Python 3.11 in Tox
+* tox.ini: make it compatible with tox 4.x.
+* tests: check also a special syntax for quotes.
+* Ignore .vscode directory.
 
 
 `v0.6.2`_ (2023-04-05)
@@ -181,7 +181,7 @@ Miscellanea
 Bug fixes
 """""""""
 
-* setup.py: limit max version of pynetbox that in release 6.0.0 introduced some breacking changes in the API.
+* setup.py: limit max version of pynetbox that in release 6.0.0 introduced some breaking changes in the API.
 * doc: fix documentation generation that prevented from properly including the auto-generated documentation.
 
 `v0.2.7`_ (2021-04-20)
@@ -394,9 +394,9 @@ Miscellanea
 .. _`T257392`: https://phabricator.wikimedia.org/T257392
 .. _`T260769`: https://phabricator.wikimedia.org/T260769
 .. _`T273865`: https://phabricator.wikimedia.org/T273865
+.. _`T310577`: https://phabricator.wikimedia.org/T310577
 .. _`T310745`: https://phabricator.wikimedia.org/T310745
 .. _`T311486`: https://phabricator.wikimedia.org/T311486
-.. _`T310577`: https://phabricator.wikimedia.org/T310577
 .. _`T337082`: https://phabricator.wikimedia.org/T337082
 
 .. _`v0.1.0`: https://github.com/wikimedia/operations-software-homer/releases/tag/v0.1.0
