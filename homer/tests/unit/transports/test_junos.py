@@ -1,4 +1,6 @@
 """Junos module tests."""
+import re
+
 from unittest import mock
 
 import pytest
@@ -19,6 +21,8 @@ ERROR_RESPONSE = """
     <load-configuration-results>
     <rpc-error>
         <error-severity>warning</error-severity>
+        <bad-element>Bad Element</bad-element>
+        <error-path>Error Path</error-path>
         <error-message>Error Message</error-message>
     </rpc-error>
     <rpc-error>
@@ -195,20 +199,24 @@ class TestConnectedDevice:
         assert callback.called
         mocked_junos_device.return_value.cu.commit.assert_not_called()
 
-    @pytest.mark.parametrize('insert, expected', (
-        ('', 'Commit error: Error Message'),
-        ('<ok/>', 'Commit error: CommitError'),
+    @pytest.mark.parametrize('insert, expected, remove_line', (
+        ('', 'Commit error: Error Message\nIn Error Path (Bad Element)', False),
+        ('', 'Commit error: CommitError', True),
+        ('<ok/>', 'Commit error: CommitError', False),
     ))
-    def test_commit_commit_error(self, mocked_junos_device, insert, expected):
+    def test_commit_commit_error(self, mocked_junos_device, insert, expected, remove_line):
         """On CommitError it should raise HomerError with the error message from the CommitError."""
         mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
         mocked_junos_device.return_value.cu.diff.return_value = 'diff'
+        error_response = ERROR_RESPONSE
+        if remove_line:
+            error_response = ERROR_RESPONSE.replace('        <bad-element>Bad Element</bad-element>\n', '')
         mocked_junos_device.return_value.cu.commit.side_effect = CommitError(
-            etree.XML(ERROR_RESPONSE.format(insert=insert)))
+            etree.XML(error_response.format(insert=insert)))
         device = junos.ConnectedDevice(self.fqdn, timeout=10)
         callback = mock.Mock()
 
-        with pytest.raises(HomerError, match=expected):
+        with pytest.raises(HomerError, match=re.escape(expected)):
             device.commit('config', COMMIT_MESSAGE, callback)
 
         callback.assert_called_once_with('device1.example.com', 'diff')
@@ -255,7 +263,7 @@ class TestConnectedDevice:
 
         assert not success
         assert diff == 'diff'
-        assert f'Commit check error on {self.fqdn}: Error Message' in caplog.text
+        assert f'Commit check error on {self.fqdn}: Error Message\nIn Error Path (Bad Element)' in caplog.text
         mocked_junos_device.return_value.cu.commit_check.assert_called_once_with(timeout=30)
         mocked_junos_device.return_value.cu.rollback.assert_called_once_with()
 
@@ -263,7 +271,8 @@ class TestConnectedDevice:
         """On any other exception it should log the stacktrace from the exception."""
         mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
         mocked_junos_device.return_value.cu.diff.return_value = 'diff'
-        mocked_junos_device.return_value.cu.commit_check.side_effect = ValueError('Error Message')
+        mocked_junos_device.return_value.cu.commit_check.side_effect = ValueError(
+            'Error Message\nIn Error Path (Bad Element)')
         device = junos.ConnectedDevice(self.fqdn, timeout=10)
 
         success, diff = device.commit_check('config')

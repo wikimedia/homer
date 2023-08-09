@@ -222,7 +222,13 @@ class ConnectedDevice:
 
         """
         if exc.rsp.find('.//ok') is None:
-            return exc.rsp.findtext('.//error-message')
+            try:
+                path = exc.rsp.findtext('.//error-path').strip()
+                element = exc.rsp.findtext('.//bad-element').strip()
+                message = exc.rsp.findtext('.//error-message').strip()
+                return f'{message}\nIn {path} ({element})'
+            except AttributeError:
+                pass
         return str(exc)
 
 
