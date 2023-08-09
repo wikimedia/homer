@@ -10,7 +10,7 @@ with open('README.rst', 'r') as readme:
 INSTALL_REQUIRES = [
     'Jinja2>=2.10',
     'junos-eznc>=2.2.1,<3',
-    'paramiko<=2.8.1',  # T299482
+    'paramiko',
     'pynetbox~= 6.6',
     'pyyaml>=3.11',
     'aerleon',
