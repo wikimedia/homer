@@ -1,6 +1,20 @@
 Homer Changelog
 ---------------
 
+`v0.6.4`_ (2023-10-03)
+^^^^^^^^^^^^^^^^^^^^^^
+
+Minor improvements
+""""""""""""""""""
+
+* transports.junos: Add more info on commit errors.
+
+Miscellanea
+"""""""""""
+
+* setup.py: remove version pin for paramiko.
+* tox.ini: use sphinx-build instead of setup.py.
+
 `v0.6.3`_ (2023-07-18)
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -420,3 +434,4 @@ Miscellanea
 .. _`v0.6.1`: https://github.com/wikimedia/homer/releases/tag/v0.6.1
 .. _`v0.6.2`: https://github.com/wikimedia/homer/releases/tag/v0.6.2
 .. _`v0.6.3`: https://github.com/wikimedia/homer/releases/tag/v0.6.3
+.. _`v0.6.4`: https://github.com/wikimedia/homer/releases/tag/v0.6.4
