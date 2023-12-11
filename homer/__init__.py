@@ -11,6 +11,9 @@ from typing import Callable, DefaultDict, Dict, List, Mapping, Optional, Tuple
 import pynetbox
 
 from pkg_resources import DistributionNotFound, get_distribution
+from requests import Session
+from requests.adapters import HTTPAdapter
+from urllib3.util import Retry
 
 from homer.capirca import CapircaGenerate
 from homer.config import HierarchicalConfig, load_yaml_config
@@ -61,6 +64,11 @@ class Homer:
         if self._main_config.get('netbox', {}):
             self._netbox_api = pynetbox.api(
                 self._main_config['netbox']['url'], token=self._main_config['netbox']['token'], threading=True)
+            retry_session = Session()
+            retry_adapter = HTTPAdapter(max_retries=Retry(total=3, backoff_factor=1))
+            retry_session.mount('http://', retry_adapter)
+            retry_session.mount('https://', retry_adapter)
+            self._netbox_api.http_session = retry_session
             if self._main_config['netbox'].get('plugin', ''):
                 self._device_plugin = import_module(
                     self._main_config['netbox']['plugin']).NetboxDeviceDataPlugin

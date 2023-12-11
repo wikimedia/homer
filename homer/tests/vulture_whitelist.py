@@ -28,3 +28,6 @@ whitelist_netbox.NetboxDeviceData._get_inventory
 whitelist_mock = Whitelist()
 whitelist_mock.return_value
 whitelist_mock.side_effect
+
+whitelist_homer = Whitelist()
+whitelist_homer.Homer._netbox_api.http_session
