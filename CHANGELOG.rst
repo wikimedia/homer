@@ -1,6 +1,14 @@
 Homer Changelog
 ---------------
 
+`v0.6.5`_ (2023-12-18)
+^^^^^^^^^^^^^^^^^^^^^^
+
+Minor improvements
+""""""""""""""""""
+
+* Netbox: retry on failed API calls
+
 `v0.6.4`_ (2023-10-03)
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -435,3 +443,4 @@ Miscellanea
 .. _`v0.6.2`: https://github.com/wikimedia/homer/releases/tag/v0.6.2
 .. _`v0.6.3`: https://github.com/wikimedia/homer/releases/tag/v0.6.3
 .. _`v0.6.4`: https://github.com/wikimedia/homer/releases/tag/v0.6.4
+.. _`v0.6.5`: https://github.com/wikimedia/homer/releases/tag/v0.6.5
