@@ -148,6 +148,15 @@ class NetboxDeviceData(BaseNetboxDeviceData):
                 for tagged_vlan in interface.tagged_vlans:
                     if tagged_vlan.vid not in vlans:
                         vlans[tagged_vlan.vid] = tagged_vlan
+            if interface.name.startswith('irb'):
+                vid = int(interface.name.split('.')[1])
+                if vid not in vlans:
+                    vlan = self._api.ipam.vlans.get(vid=vid)
+                    try:
+                        vlans[vlan.vid] = vlan
+                    except AttributeError as e:
+                        raise HomerError(f'IRB interface {interface} does not match any Vlan in Netbox') from e
+
         return vlans
 
 

@@ -210,10 +210,12 @@ class TestNetboxDeviceData:
         interface1.tagged_vlans = [NetboxObject(), NetboxObject()]
         interface1.tagged_vlans[0].vid = 667
         interface1.tagged_vlans[1].vid = 667
+        interface1.name = 'int1'
         interface2 = NetboxObject()  # This is a fake interface object
         interface2.untagged_vlan = NetboxObject()  # That interface have fake tagged and untagged vlans
         interface2.untagged_vlan.vid = 666
         interface2.tagged_vlans = None
+        interface2.name = 'int2'
         self.netbox_api.dcim.interfaces.filter.return_value = [interface1, interface2]
         # We want the function with the fake inbound data to match the one untagged and tagged vlans
         assert self.netbox_data['vlans'] == {666: interface1.untagged_vlan, 667: interface1.tagged_vlans[0]}
