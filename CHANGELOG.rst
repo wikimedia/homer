@@ -1,6 +1,14 @@
 Homer Changelog
 ---------------
 
+`v0.6.6`_ (2024-06-18)
+^^^^^^^^^^^^^^^^^^^^^^
+
+Minor improvements
+""""""""""""""""""
+
+* Netbox: include vlans defined on IRB int in returned vlans for device.
+
 `v0.6.5`_ (2023-12-18)
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -444,3 +452,4 @@ Miscellanea
 .. _`v0.6.3`: https://github.com/wikimedia/homer/releases/tag/v0.6.3
 .. _`v0.6.4`: https://github.com/wikimedia/homer/releases/tag/v0.6.4
 .. _`v0.6.5`: https://github.com/wikimedia/homer/releases/tag/v0.6.5
+.. _`v0.6.6`: https://github.com/wikimedia/homer/releases/tag/v0.6.6
