@@ -111,13 +111,15 @@ class NetboxDeviceData(BaseNetboxDeviceData):
         for a_int in self._api.dcim.interfaces.filter(device_id=device_id):
             # b_int is either the patch panel interface facing out or the initial interface
             # if no patch panel
-            if a_int.link_peer_type == 'dcim.frontport' and a_int.link_peer.rear_port:
-                b_int = a_int.link_peer.rear_port
+            # Using link_peers[0] to mimic pre-Netbox 3.3 behavior, when a cable only had one termination
+            # per side. To be revisited if we start using the multi-termination feature
+            if a_int.link_peers_type == 'dcim.frontport' and a_int.link_peers[0].rear_port:
+                b_int = a_int.link_peers[0].rear_port
             else:
                 # If the patch panel isn't patched through
                 b_int = a_int
-            if b_int.link_peer_type == 'circuits.circuittermination':
-                circuits[a_int.name] = dict(self._api.circuits.circuits.get(b_int.link_peer.circuit.id))
+            if b_int.link_peers_type == 'circuits.circuittermination':
+                circuits[a_int.name] = dict(self._api.circuits.circuits.get(b_int.link_peers[0].circuit.id))
 
         return circuits
 
@@ -225,15 +227,15 @@ class NetboxInventory:
 
         """
         device_list_gql = """
-        query ($role: [String], $status: [String]) {
-            device_list(role: $role, status: $status) {
+        query ($role: [String!], $status: [String!]) {
+            device_list(filters: {role: $role, status: $status}) {
                 id
                 name
                 status
                 platform { slug }
                 site { slug }
                 device_type { slug }
-                device_role { slug }
+                role { slug }
                 primary_ip4 {
                     address
                     dns_name
@@ -261,7 +263,7 @@ class NetboxInventory:
 
             metadata = {
                 'id': device['id'],
-                'role': device['device_role']['slug'],
+                'role': device['role']['slug'],
                 'site': device['site']['slug'],
                 'type': device['device_type']['slug'],
                 'status': device['status'].lower(),

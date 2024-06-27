@@ -11,7 +11,7 @@ INSTALL_REQUIRES = [
     'Jinja2>=2.10',
     'junos-eznc>=2.2.1,<3',
     'paramiko',
-    'pynetbox~= 6.6',
+    'pynetbox',
     'pyyaml>=3.11',
     'aerleon',
     'python-dateutil>=2.8.1',

@@ -31,8 +31,8 @@ def mock_netbox_device(name, role, site,  # pylint: disable=too-many-arguments,t
     device = NetboxObject()
     device.id = 123  # pylint: disable=invalid-name
     device.name = name
-    device.device_role = NetboxObject()
-    device.device_role.slug = role
+    device.role = NetboxObject()
+    device.role.slug = role
     device.site = NetboxObject()
     device.site.slug = site
     device.status = NetboxObject()
@@ -179,20 +179,20 @@ class TestNetboxDeviceData:
     def test_get_circuits(self):
         """It should return all the circuits connected to a device."""
         interface_1 = NetboxObject()
-        interface_1.link_peer_type = 'circuits.circuittermination'
+        interface_1.link_peers_type = 'circuits.circuittermination'
         interface_1.name = 'int1'
-        interface_1.link_peer = NetboxObject()
-        interface_1.link_peer.circuit = NetboxObject()
-        interface_1.link_peer.circuit.id = 1
+        interface_1.link_peers = [NetboxObject()]
+        interface_1.link_peers[0].circuit = NetboxObject()
+        interface_1.link_peers[0].circuit.id = 1
 
         interface_2 = NetboxObject()
         interface_2.name = 'int2'
-        interface_2.link_peer_type = 'dcim.frontport'
-        interface_2.link_peer = NetboxObject()
-        interface_2.link_peer.rear_port = interface_1
+        interface_2.link_peers_type = 'dcim.frontport'
+        interface_2.link_peers = [NetboxObject()]
+        interface_2.link_peers[0].rear_port = interface_1
 
         interface_3 = NetboxObject()
-        interface_3.link_peer_type = 'dcim.interface'
+        interface_3.link_peers_type = 'dcim.interface'
 
         self.netbox_api.circuits.circuits.get.return_value = {}
         self.netbox_api.dcim.interfaces.filter.return_value = [interface_1, interface_2, interface_3]
@@ -266,7 +266,7 @@ class TestNetboxInventory:
         devices = self.inventory.get_devices()
         expected = {}
         for device in self.selected_devices:
-            expected_device = {'site': device.site.slug, 'role': device.device_role.slug,
+            expected_device = {'site': device.site.slug, 'role': device.role.slug,
                                'type': device.device_type.slug, 'status': device.status.value, 'id': device.id}
             if device.primary_ip4 is not None:
                 expected_device['ip4'] = '192.0.2.42'
