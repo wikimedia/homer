@@ -1,6 +1,23 @@
 Homer Changelog
 ---------------
 
+`v0.7.0`_ (2024-07-22)
+^^^^^^^^^^^^^^^^^^^^^^
+
+Breaking change
+"""""""""""""""
+
+* Netbox: Add support for Netbox 4. (`T336275`_)
+
+  * Not compatible with Netbox < 3.3.
+  * Limited support for cables with multiple terminations per sides:
+    the first termination is the only one considered.
+
+Miscellanea
+"""""""""""
+
+* Tox: Add Python 3.12 support.
+
 `v0.6.6`_ (2024-06-18)
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -427,6 +444,7 @@ Miscellanea
 .. _`T310577`: https://phabricator.wikimedia.org/T310577
 .. _`T310745`: https://phabricator.wikimedia.org/T310745
 .. _`T311486`: https://phabricator.wikimedia.org/T311486
+.. _`T336275`: https://phabricator.wikimedia.org/T336275
 .. _`T337082`: https://phabricator.wikimedia.org/T337082
 
 .. _`v0.1.0`: https://github.com/wikimedia/operations-software-homer/releases/tag/v0.1.0
@@ -453,3 +471,4 @@ Miscellanea
 .. _`v0.6.4`: https://github.com/wikimedia/homer/releases/tag/v0.6.4
 .. _`v0.6.5`: https://github.com/wikimedia/homer/releases/tag/v0.6.5
 .. _`v0.6.6`: https://github.com/wikimedia/homer/releases/tag/v0.6.6
+.. _`v0.7.0`: https://github.com/wikimedia/homer/releases/tag/v0.7.0
