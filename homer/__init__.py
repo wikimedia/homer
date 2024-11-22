@@ -68,6 +68,7 @@ class Homer:
             retry_adapter = HTTPAdapter(max_retries=Retry(total=3, backoff_factor=1))
             retry_session.mount('http://', retry_adapter)
             retry_session.mount('https://', retry_adapter)
+            retry_session.headers.update({'User-Agent': f'Homer {__version__}'})
             self._netbox_api.http_session = retry_session
             if self._main_config['netbox'].get('plugin', ''):
                 self._device_plugin = import_module(
@@ -86,7 +87,7 @@ class Homer:
             # Get the data from Netbox while keeping any existing metadata from the devices.yaml file.
             # The data from Netbox overrides the existing keys for each device, if both present.
             netbox_devices = NetboxInventory(
-                self._main_config['netbox'],
+                self._netbox_api,
                 netbox_inventory['device_roles'],
                 netbox_inventory['device_statuses']).get_devices()
             for fqdn, data in netbox_devices.items():
@@ -300,7 +301,7 @@ class Homer:
         netbox_data = None
         if self._netbox_api is not None:
             logger.info('Gathering global Netbox data')
-            netbox_data = NetboxData(self._netbox_api)
+            netbox_data = NetboxData(self._netbox_api, self._main_config['base_paths'])
 
         for device in self._devices.query(query):
             logger.info('Generating configuration for %s', device.fqdn)
@@ -318,11 +319,13 @@ class Homer:
                 if netbox_data is not None:
                     device_data['netbox'] = {
                         'global': netbox_data,
-                        'device': NetboxDeviceData(self._netbox_api, device),
+                        'device': NetboxDeviceData(self._netbox_api, self._main_config['base_paths'], device),
                     }
 
                     if self._device_plugin is not None:
-                        device_data['netbox']['device_plugin'] = self._device_plugin(self._netbox_api, device)
+                        device_data['netbox']['device_plugin'] = self._device_plugin(self._netbox_api,
+                                                                                     self._main_config['base_paths'],
+                                                                                     device)
                 # Render the Jinja templates based on yaml + netbox data
                 device_config.append(self._renderer.render(device.metadata['role'], device_data))
             except HomerError:
@@ -347,7 +350,7 @@ class Homer:
 
     @staticmethod
     def _parse_results(successes: Mapping[bool, List[Device]]) -> int:
-        """Parse the results dictionary, log and return the approriate exit status code.
+        """Parse the results dictionary, log and return the appropriate exit status code.
 
         Arguments:
             successes (dict): a dictionary that contains two keys (:py:data:`True` and :py:data:`False`) and as value

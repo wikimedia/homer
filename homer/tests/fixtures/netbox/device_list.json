@@ -12,7 +12,10 @@
                     "slug": "siteA"
                 },
                 "device_type": {
-                    "slug": "typeA"
+                    "slug": "typeA",
+                    "manufacturer": {
+                      "slug": "manufacturerA"
+                    }
                 },
                 "role": {
                     "slug": "roleA"
@@ -33,7 +36,10 @@
                     "slug": "siteA"
                 },
                 "device_type": {
-                    "slug": "typeA"
+                    "slug": "typeA",
+                    "manufacturer": {
+                      "slug": "manufacturerA"
+                    }
                 },
                 "role": {
                     "slug": "roleA"
@@ -63,7 +69,26 @@
                     "address": "192.0.2.42/24",
                     "dns_name": "device1-vc1.example.com"
                 }
+            },
+            {
+                "id": 123,
+                "name": "device-no-dns",
+                "status": "ACTIVE",
+                "platform": {
+                    "slug": "linux"
+                },
+                "site": {
+                    "slug": "siteA"
+                },
+                "device_type": {
+                    "slug": "typeA"
+                },
+                "role": {
+                    "slug": "roleA"
+                },
+                "primary_ip4": {}
             }
+
         ]
     }
 }

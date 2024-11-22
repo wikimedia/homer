@@ -7,12 +7,13 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
+import requests
 
-from homer.config import load_yaml_config
+from homer import netbox
 from homer.devices import Device
 from homer.exceptions import HomerError
-from homer.netbox import BaseNetboxData, NetboxData, NetboxDeviceData, NetboxInventory
 from homer.tests import get_fixture_path
+from homer.tests.unit.test_init import setup_tmp_path
 
 
 class NetboxObject:  # pylint: disable=too-many-instance-attributes
@@ -23,9 +24,23 @@ class NetboxObject:  # pylint: disable=too-many-instance-attributes
         return iter(vars(self).items())
 
 
-# Disablint pylint useless-suppression because it would fire for the too-many-branches check, if removing that one too
-# it will fire because of too-many-branches. Unable to reproduce in isolation quickly.
-# pylint: disable-next=too-many-arguments,too-many-positional-arguments,too-many-branches,useless-suppression
+class NetboxDataGql(netbox.NetboxData):
+    """Extends the NetboxData class to add a GQL query."""
+
+    def gql(self, query, variables):
+        """It returns data from executing a gql query."""
+        return self._gql_execute(query, variables)
+
+
+class NetboxDeviceDataGql(netbox.NetboxDeviceData):
+    """Extends the NetboxDeviceData class to add a GQL query."""
+
+    def gql(self, query, variables):
+        """It returns data from executing a gql query."""
+        return self._gql_execute(query, variables)
+
+
+# pylint: disable-next=too-many-arguments,too-many-positional-arguments
 def mock_netbox_device(name, role, site, status, ip4=False, ip6=False, virtual_chassis=False, platform=True):
     """Returns a mocked Netbox device object."""
     device = NetboxObject()
@@ -39,6 +54,8 @@ def mock_netbox_device(name, role, site, status, ip4=False, ip6=False, virtual_c
     device.status.value = status.lower()
     device.device_type = NetboxObject()
     device.device_type.slug = 'typeA'
+    device.device_type.manufacturer = NetboxObject()
+    device.device_type.manufacturer.slug = 'manufacturerA'
 
     if ip4:
         device.primary_ip4 = NetboxObject()
@@ -78,10 +95,12 @@ def mock_netbox_virtual_chassis(master, domain):
 class TestBaseNetboxData:
     """BaseNetboxData class tests."""
 
-    def setup_method(self):
+    @pytest.fixture(autouse=True)
+    def setup_method(self, tmp_path):
         """Initialize the test instances."""
         self.netbox_api = mock.MagicMock()  # Can't use spec_set because of pynetbox lazy creation
-        self.netbox_data = BaseNetboxData(self.netbox_api)
+        self.output, self.config = setup_tmp_path('config-netbox.yaml', tmp_path)
+        self.netbox_data = netbox.BaseNetboxData(self.netbox_api, self.config['base_paths'])
 
         def key_raise():
             raise RuntimeError('key raise')
@@ -90,7 +109,7 @@ class TestBaseNetboxData:
 
     def test_init(self):
         """An instance of BaseNetboxData should be also an instance of UserDict."""
-        assert isinstance(self.netbox_data, BaseNetboxData)
+        assert isinstance(self.netbox_data, netbox.BaseNetboxData)
         assert isinstance(self.netbox_data, UserDict)
 
     def test_getitem_fail(self):
@@ -107,14 +126,19 @@ class TestBaseNetboxData:
 class TestNetboxData:
     """NetboxData class tests."""
 
-    def setup_method(self):
+    @pytest.fixture(autouse=True)
+    def setup_method(self, tmp_path, requests_mock):
         """Initialize the test instances."""
         self.netbox_api = mock.MagicMock()  # Can't use spec_set because of pynetbox lazy creation
-        self.netbox_data = NetboxData(self.netbox_api)
+        self.netbox_api.base_url = 'http://localhost/api'
+        self.netbox_api.http_session = requests.Session()
+        self.output, self.config = setup_tmp_path('config-netbox.yaml', tmp_path)
+        self.netbox_data = NetboxDataGql(self.netbox_api, self.config['base_paths'])
+        self.requests_mock = requests_mock
 
     def test_init(self):
         """An instance of NetboxData should be also an instance of UserDict."""
-        assert isinstance(self.netbox_data, NetboxData)
+        assert isinstance(self.netbox_data, netbox.NetboxData)
         assert isinstance(self.netbox_data, UserDict)
 
     def test_vlans(self):
@@ -124,28 +148,79 @@ class TestNetboxData:
         self.netbox_api.ipam.vlans.all.return_value = [vlan]
         assert self.netbox_data['vlans'] == [{'id': 1}]
 
+    @pytest.mark.parametrize('variables', (None, {}))
+    def test_gql(self, variables):
+        """It should load the graphql query from the file and execute it."""
+        adapter = self.requests_mock.post('http://localhost/graphql/', json={'data': {'key': 'value'}})
+        assert self.netbox_data.gql('query', variables) == {'key': 'value'}
+
+        assert adapter.call_count == 1
+        request = adapter.last_request.json()
+        assert request['query'] == 'query () {\n    device_list() {\n        name\n    }\n}\n'
+        if variables is not None:
+            assert request['variables'] == variables
+        else:
+            assert 'variables' not in request
+
 
 class TestNetboxDeviceData:
     """NetboxDeviceData class tests."""
 
-    def setup_method(self):
+    @pytest.fixture(autouse=True)
+    def setup_method(self, tmp_path, requests_mock):
         """Initialize the test instances."""
         self.netbox_api = mock.MagicMock()  # Can't use spec_set because of pynetbox lazy creation
+        self.netbox_api.base_url = 'http://localhost/api'
+        self.netbox_api.http_session = requests.Session()
         netbox_device = mock_netbox_device('device1.example.com', 'role1', 'site1', 'Active')
+        self.netbox_api.dcim.devices.get.return_value = netbox_device
         self.device = Device(netbox_device.name, {'netbox_object': netbox_device, 'id': 123}, {}, {})
-        self.netbox_data = NetboxDeviceData(self.netbox_api, self.device)
+        self.output, self.config = setup_tmp_path('config-netbox.yaml', tmp_path)
+        self.netbox_data = NetboxDeviceDataGql(self.netbox_api, self.config['base_paths'], self.device)
+        self.requests_mock = requests_mock
 
     def test_init(self):
         """An instance of NetboxData should be also an instance of UserDict."""
-        assert isinstance(self.netbox_data, NetboxDeviceData)
+        assert isinstance(self.netbox_data, netbox.NetboxDeviceData)
         assert isinstance(self.netbox_data, UserDict)
 
-    def test_cached_key(self):
-        """If a key has been already populated it should not call the method again."""
+    @pytest.mark.parametrize('variables', (None, {}, {'key1': 'value1'}))
+    @pytest.mark.parametrize('virtual_chassis', (False, True))
+    def test_gql(self, virtual_chassis, variables):
+        """It should run a gql query with the given variables in addition to the default ones."""
+        adapter = self.requests_mock.post('http://localhost/graphql/', json={'data': {'key': 'value'}})
+
+        expected_variables = {'device_id': '123'}
+        if virtual_chassis:
+            netbox_device = mock_netbox_device('device1.example.com', 'role1', 'site1', 'Active', virtual_chassis=True)
+            self.netbox_api.dcim.devices.get.return_value = netbox_device
+            device = Device(netbox_device.name, {'netbox_object': netbox_device, 'id': 123}, {}, {})
+            netbox_data = NetboxDeviceDataGql(self.netbox_api, self.config['base_paths'], device)
+            expected_variables['virtual_chassis_id'] = '1'
+        else:
+            netbox_data = self.netbox_data
+
+        if variables:
+            expected_variables.update(variables)
+
+        assert netbox_data.gql('query', variables) == {'key': 'value'}
+
+        assert adapter.call_count == 1
+        request = adapter.last_request.json()
+        assert request['query'] == 'query () {\n    device_list() {\n        name\n    }\n}\n'
+        assert request['variables'] == expected_variables
+
+    def test_get_virtual_chassis_members_no_virtual_chassis(self):
+        """If a device is not part of a virtual chassis it should return None."""
+        assert self.netbox_data['virtual_chassis_members'] is None
 
     def test_get_virtual_chassis_members_no_members(self):
-        """If a device is not part of a virtual chassis it should return None."""
-        assert len(self.netbox_data['virtual_chassis_members']) == 0
+        """If a device is part of a virtual chassis without members it should return empty list."""
+        netbox_device = mock_netbox_device('device1.example.com', 'role1', 'site1', 'Active', virtual_chassis=True)
+        device = Device(netbox_device.name, {'netbox_object': netbox_device, 'id': 123}, {}, {})
+        self.netbox_api.dcim.devices.get.return_value = netbox_device
+        netbox_data = netbox.NetboxDeviceData(self.netbox_api, self.config['base_paths'], device)
+        assert netbox_data['virtual_chassis_members'] == []
 
     def test_get_virtual_chassis_members_with_members(self):
         """If a device is part of a virtual chassis it should return its members."""
@@ -158,8 +233,9 @@ class TestNetboxDeviceData:
             devices.append(Device(netbox_device.name, {'netbox_object': netbox_device, 'id': 123}, {}, {}))
 
         self.netbox_api.dcim.devices.filter.return_value = netbox_devices
+        self.netbox_api.dcim.devices.get.return_value = netbox_devices[0]
 
-        netbox_data = NetboxDeviceData(self.netbox_api, devices[0])
+        netbox_data = netbox.NetboxDeviceData(self.netbox_api, self.config['base_paths'], devices[0])
         # Call multiple times so that we can check the results are cached
         for _ in range(2):
             assert [d['name'] for d in netbox_data['virtual_chassis_members']] == list(names)
@@ -230,8 +306,11 @@ class TestNetboxInventory:
     @pytest.fixture(autouse=True)
     def setup_method(self, requests_mock):
         """Initialize the test instance."""
+        self.netbox_api = mock.MagicMock()  # Can't use spec_set because of pynetbox lazy creation
+        self.netbox_api.base_url = 'http://localhost/api'
+        self.netbox_api.http_session = requests.Session()
+
         # pylint: disable=attribute-defined-outside-init
-        config = load_yaml_config(get_fixture_path('cli', 'config-netbox.yaml'))
         selected_devices = [
             mock_netbox_device('device1', 'roleA', 'siteA', 'Active', ip4=True),
             mock_netbox_device('device2', 'roleA', 'siteA', 'Staged', ip6=True),
@@ -255,14 +334,14 @@ class TestNetboxInventory:
         self.mocked_api.dcim.virtual_chassis.all.return_value = virtual_chassis
         self.mocked_api.dcim.devices.filter.return_value = selected_devices + filtered_devices
         self.requests_mock = requests_mock
-        self.inventory = NetboxInventory(config['netbox'], ['roleA'], ['Active', 'Staged'])
+        self.inventory = netbox.NetboxInventory(self.netbox_api, ['roleA'], ['Active', 'Staged'])
 
-    def test_get_devices(self):
+    def test_get_devices_ok(self):
         """It should get the devices without inspecting virtual chassis."""
         device_list = json.loads(
-            Path(get_fixture_path('netbox', 'device_list.json')).read_text(encoding="UTF-8")
+            Path(get_fixture_path('netbox', 'device_list.json')).read_text(encoding='UTF-8')
         )
-        self.requests_mock.post('/graphql/', json=device_list)  # nosec
+        adapter = self.requests_mock.post('http://localhost/graphql/', json=device_list)
         devices = self.inventory.get_devices()
         expected = {}
         for device in self.selected_devices:
@@ -279,3 +358,32 @@ class TestNetboxInventory:
             expected[fqdn] = expected_device
 
         assert devices == expected
+        assert adapter.call_count == 1
+
+
+class TestGQLExecute:
+    """Test class for the gql_execute function."""
+
+    @pytest.fixture(autouse=True)
+    def setup_method(self, requests_mock):
+        """Initialize the test instance."""
+        self.netbox_api = mock.MagicMock()  # Can't use spec_set because of pynetbox lazy creation
+        self.netbox_api.base_url = 'http://localhost/api'
+        self.netbox_api.http_session = requests.Session()
+        self.requests_mock = requests_mock
+
+    def test_gql_execute_requests_raise(self):
+        """In case the request fails it should raise a HomerError."""
+        adapter = self.requests_mock.post('http://localhost/graphql/', exc=requests.exceptions.ConnectTimeout)
+        with pytest.raises(HomerError, match='failed to fetch netbox data'):
+            netbox.gql_execute(self.netbox_api, 'query')
+
+        assert adapter.call_count == 1
+
+    def test_gql_execute_no_data(self):
+        """In case the request returns no data it should raise a HomerError."""
+        adapter = self.requests_mock.post('http://localhost/graphql/', json={})
+        with pytest.raises(HomerError, match='No data found in GraphQL response'):
+            netbox.gql_execute(self.netbox_api, 'query')
+
+        assert adapter.call_count == 1

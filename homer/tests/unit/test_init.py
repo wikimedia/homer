@@ -198,6 +198,7 @@ class TestHomerNetbox:
         """Initialize the instance."""
         # pylint: disable=attribute-defined-outside-init
         self.output, self.config = setup_tmp_path('config-netbox.yaml', tmp_path)
+        mocked_pynetbox.return_value.base_url = 'https://localhost/api'
         self.mocked_pynetbox = mocked_pynetbox
         self.requests_mock = requests_mock
         device_list = json.loads(

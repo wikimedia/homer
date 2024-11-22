@@ -1,0 +1,5 @@
+query () {
+    device_list() {
+        name
+    }
+}

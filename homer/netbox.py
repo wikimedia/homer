@@ -3,10 +3,10 @@ import ipaddress
 import logging
 
 from collections import UserDict
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
 
 import pynetbox
-import requests
 
 from requests.exceptions import RequestException
 
@@ -20,15 +20,17 @@ logger = logging.getLogger(__name__)
 class BaseNetboxData(UserDict):
     """Base class to gather data dynamically from Netbox."""
 
-    def __init__(self, api: pynetbox.api):
+    def __init__(self, api: pynetbox.api, base_paths: dict[str, str]):
         """Initialize the dictionary.
 
         Arguments:
             api (pynetbox.api): the Netbox API instance.
+            base_paths (dict): The path to the public and private directories.
 
         """
         super().__init__()
         self._api = api
+        self._base_paths = base_paths
 
     def __getitem__(self, key: Any) -> Any:
         """Dynamically call the related method, if exists, to return the requested data.
@@ -52,21 +54,42 @@ class BaseNetboxData(UserDict):
 
         return self.data[key]
 
+    def _gql_execute(self, query_name: str, variables: Optional[dict] = None) -> dict[str, Any]:
+        """Exposes gql_execute to BaseNetboxData."""
+        gql_query_path = Path(self._base_paths['public']) / 'graphql' / f'{query_name}.gql'
+        return gql_execute(self._api, gql_query_path.read_text(), variables)
+
 
 class BaseNetboxDeviceData(BaseNetboxData):
     """Base class to gather device-specific data dynamically from Netbox."""
 
-    def __init__(self, api: pynetbox.api, device: Device):
+    def __init__(self, api: pynetbox.api, base_paths: dict[str, str], device: Device):
         """Initialize the dictionary.
 
         Arguments:
             api (pynetbox.api): the Netbox API instance.
+            base_paths (dict): The path to the public and private directories.
             device (homer.devices.Device): the device for which to gather the data.
 
         """
-        super().__init__(api)
+        super().__init__(api, base_paths)
         self._device = device
         self._device.metadata['netbox_object'] = api.dcim.devices.get(id=device.metadata['id'])
+
+    def _gql_execute(self, query_name: str, variables: Optional[dict] = None) -> dict[str, Any]:
+        """Exposes gql_execute to BaseNetboxDeviceData while injecting device variables."""
+        # Inject device_id
+        local_variables = {'device_id': str(self._device.metadata['id'])}
+
+        # Inject virtual_chassis_id if defined:
+        if self._device.metadata['netbox_object'].virtual_chassis:
+            local_variables.update({'virtual_chassis_id':
+                                    str(self._device.metadata['netbox_object'].virtual_chassis.id)})
+
+        # Variables passed as parameter take priority if any conflict
+        if variables:
+            local_variables.update(variables)
+        return super()._gql_execute(query_name, local_variables)
 
 
 class NetboxData(BaseNetboxData):
@@ -165,61 +188,21 @@ class NetboxDeviceData(BaseNetboxDeviceData):
 class NetboxInventory:
     """Use Netbox as inventory to gather the list of devices to manage."""
 
-    def __init__(self, config: dict, device_roles: Sequence[str], device_statuses: Sequence[str]):
+    def __init__(self, api: pynetbox.api, device_roles: Sequence[str], device_statuses: Sequence[str]):
         """Initialize the instance.
 
         Arguments:
+            api (pynetbox.api): the Netbox API instance.
             config (dict): Homer's configuration section about Netbox
             device_roles (list): a sequence of Netbox device role slug strings to filter the devices.
             device_statuses (list): a sequence of Netbox device status label or value strings to filter the devices.
 
         """
-        self._config = config
+        self._api = api
         self._device_roles = device_roles
         self._device_statuses = [status.lower() for status in device_statuses]
 
     def get_devices(self) -> Dict[str, Dict[str, str]]:
-        """Return all the devices based on configuration with their role and site.
-
-        Returns:
-            dict: a dictionary with the device FQDN as keys and a metadata dictionary as value.
-
-        """
-        # TODO maybe remove this class
-        devices = self._get_devices()
-        return devices
-
-    def _gql_execute(self, query: str, variables: Optional[dict] = None) -> dict:
-        """Parse the query into a gql query, execute and return the results.
-
-        Arguments:
-            query: a string representing the gql query
-            variables: A list of variables to send
-
-        Results:
-            dict: the results
-
-        """
-        data: dict[str, Union[str, dict]] = {"query": query}
-        if variables is not None:
-            data["variables"] = variables
-        try:
-            session = requests.Session()
-            session.headers.update(
-                {"Authorization": f"Token {self._config['token']}",
-                 "User-Agent": "Homer"}
-            )
-            response = session.post(f"{self._config['url']}/graphql/", json=data, timeout=15)
-            response.raise_for_status()
-            return response.json()['data']
-        except RequestException as error:
-            raise HomerError(
-                f"failed to fetch netbox data: {error}\n{response.text}"
-            ) from error
-        except KeyError as error:
-            raise HomerError(f"No data found in GraphQL response: {error}") from error
-
-    def _get_devices(self) -> Dict[str, Dict[str, str]]:
         """Get the devices based on role, status and virtual chassis membership.
 
         Returns:
@@ -234,7 +217,10 @@ class NetboxInventory:
                 status
                 platform { slug }
                 site { slug }
-                device_type { slug }
+                device_type {
+                    slug
+                    manufacturer { slug }
+                }
                 role { slug }
                 primary_ip4 {
                     address
@@ -247,10 +233,11 @@ class NetboxInventory:
             }
         }
         """
+
         devices: Dict[str, Dict[str, str]] = {}
 
-        variables = {"role": self._device_roles, "status": self._device_statuses}
-        devices_gql = self._gql_execute(device_list_gql, variables)['device_list']
+        variables = {'role': self._device_roles, 'status': self._device_statuses}
+        devices_gql = gql_execute(self._api, device_list_gql, variables)['device_list']
 
         for device in devices_gql:
             if (device.get('primary_ip4') and device['primary_ip4'].get('dns_name')):
@@ -278,3 +265,36 @@ class NetboxInventory:
             devices[fqdn] = metadata
 
         return devices
+
+
+def gql_execute(api: pynetbox.api, query: str, variables: Optional[dict] = None) -> dict[str, Any]:
+    """Parse the query into a gql query, execute and return the results.
+
+    Arguments:
+        api (pynetbox.api): the Netbox API instance
+        query: a string representing the gql query
+        variables: A list of variables to send
+
+    Results:
+        dict: the results
+
+    """
+    data: dict[str, Union[str, dict]] = {'query': query}
+
+    if variables is not None:
+        data['variables'] = variables
+
+    session = api.http_session
+    session.headers.update({'Authorization': f'Token {api.token}'})
+    session.headers.update({'Content-Type': 'application/json'})
+
+    response = None
+    try:
+        response = session.post(api.base_url.replace('/api', '/graphql/'), json=data, timeout=15)
+        response.raise_for_status()
+        return response.json()['data']
+    except RequestException as error:
+        response_text = f'\n{response.text}' if response is not None else ''
+        raise HomerError(f'failed to fetch netbox data: {error}{response_text}') from error
+    except KeyError as error:
+        raise HomerError(f'No data found in GraphQL response: {error}') from error

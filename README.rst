@@ -31,3 +31,6 @@ Python module that implements a class called ``NetboxDeviceDataPlugin`` that inh
 `homer.netbox.BaseNetboxDeviceData` and is in the Python ``PATH``.
 Assuming that the plugin class implements a method named ``_get_name``, it will be accessible within the templates
 with ``netbox.device_plugin.name``.
+
+Homer can use GraphQL to fetch Netbox data. For that, store your query in the ``basepath``/public/graphql directory.
+And reference it using ``_gql_execute(filename, variables)``.
