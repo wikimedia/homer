@@ -14,8 +14,9 @@
 import os
 import sys
 
+from importlib.metadata import version as meta_version
+
 import sphinx_rtd_theme
-from pkg_resources import get_distribution
 
 # Adjust path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
@@ -65,7 +66,7 @@ author = 'Riccardo Coccioli'
 # built documents.
 #
 # The full version, including alpha/beta/rc tags.
-release = get_distribution('homer').version
+release = meta_version('homer')
 # The short X.Y version.
 version = release
 
@@ -92,7 +93,6 @@ todo_include_todos = True
 # -- Options for HTML output ----------------------------------------------
 
 html_theme = 'sphinx_rtd_theme'
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

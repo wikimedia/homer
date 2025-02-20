@@ -25,8 +25,8 @@ class NetboxObject:  # pylint: disable=too-many-instance-attributes
 
 # Disablint pylint useless-suppression because it would fire for the too-many-branches check, if removing that one too
 # it will fire because of too-many-branches. Unable to reproduce in isolation quickly.
-def mock_netbox_device(name, role, site,  # pylint: disable=too-many-arguments,too-many-branches,useless-suppression
-                       status, ip4=False, ip6=False, virtual_chassis=False, platform=True):
+# pylint: disable-next=too-many-arguments,too-many-positional-arguments,too-many-branches,useless-suppression
+def mock_netbox_device(name, role, site, status, ip4=False, ip6=False, virtual_chassis=False, platform=True):
     """Returns a mocked Netbox device object."""
     device = NetboxObject()
     device.id = 123  # pylint: disable=invalid-name
@@ -266,6 +266,7 @@ class TestNetboxInventory:
         devices = self.inventory.get_devices()
         expected = {}
         for device in self.selected_devices:
+            fqdn = ""
             expected_device = {'site': device.site.slug, 'role': device.role.slug,
                                'type': device.device_type.slug, 'status': device.status.value, 'id': device.id}
             if device.primary_ip4 is not None:

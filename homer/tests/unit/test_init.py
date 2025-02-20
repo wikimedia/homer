@@ -109,7 +109,7 @@ class TestHomer:
         ('some diff', True, '# Non-empty diff omitted, -o/--omit-diff set', 99),
     ))
     @mock.patch('homer.transports.junos.JunOSDevice')
-    def test_execute_diff_ok(  # pylint: disable=too-many-arguments
+    def test_execute_diff_ok(  # pylint: disable=too-many-arguments,too-many-positional-arguments
             self, mocked_device, diff, omit_diff, expected, ret, capsys):
         """It should diff the compiled configuration with the live one."""
         mocked_device.return_value.cu.diff.return_value = diff
@@ -165,7 +165,7 @@ class TestHomer:
         ('no', 'Commit aborted'),
         ('invalid', 'Too many invalid answers, commit aborted'),
     ))
-    def test_execute_commit_abort(  # pylint: disable=too-many-arguments
+    def test_execute_commit_abort(  # pylint: disable=too-many-arguments,too-many-positional-arguments
             self, mocked_device, mocked_isatty, mocked_input, input_value, expected, caplog):
         """It should skip a device and log a warning if the commit is aborted."""
         message = 'commit message'
@@ -251,9 +251,9 @@ class TestHomerNetbox:
     @mock.patch('homer.transports.junos.ConnectedDevice', autospec=True)
     @pytest.mark.parametrize('name, suffix, port, timeout', (('device1', 'A', 22, 30),
                                                              ('device2', 'B', 2222, 10)))
-    def test_execute_diff_inventory(self, mocked_connected_device,  # pylint: disable=too-many-arguments
-                                    mocked_netbox_inventory, mocked_netbox_data, mocked_netbox_device_data, name,
-                                    suffix, port, timeout):
+    # pylint: disable-next=too-many-arguments,too-many-positional-arguments
+    def test_execute_diff_inventory(self, mocked_connected_device, mocked_netbox_inventory, mocked_netbox_data,
+                                    mocked_netbox_device_data, name, suffix, port, timeout):
         """It should generate the configuration for the given device, including netbox data."""
         fqdn = f'{name}.example.com'
         mocked_connected_device.return_value.commit_check.return_value = (True, '')

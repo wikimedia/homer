@@ -52,7 +52,7 @@ class CapircaGenerate():
             # ParseNetworkList expects an array of lines, while Netbox API returns a string with \n
             self.definitions.ParseNetworkList(netbox_definitons.splitlines())
 
-    def generate_acls(self) -> List[str]:  # noqa, mccabe: MC0001 too complex
+    def generate_acls(self) -> List[str]:  # noqa: MC0001
         """Generate the ACLs using Capirca lib.
 
         Returns:

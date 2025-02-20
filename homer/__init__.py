@@ -6,11 +6,11 @@ import sys
 
 from collections import defaultdict
 from importlib import import_module
+from importlib.metadata import PackageNotFoundError, version
 from typing import Callable, DefaultDict, Dict, List, Mapping, Optional, Tuple
 
 import pynetbox
 
-from pkg_resources import DistributionNotFound, get_distribution
 from requests import Session
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
@@ -32,9 +32,9 @@ DIFF_EXIT_CODE = 99
 
 
 try:
-    __version__ = get_distribution('homer').version  # Must be the same used as 'name' in setup.py
+    __version__ = version(__name__)  # Must be the same used as 'name' in setup.py
     """:py:class:`str`: the version of the current Homer package."""
-except DistributionNotFound:  # pragma: no cover - this should never happen during tests
+except PackageNotFoundError:  # pragma: no cover - this should never happen during tests
     pass  # package is not installed
 
 logger = logging.getLogger(__name__)
@@ -216,7 +216,7 @@ class Homer:
                               ssh_config=self._transport_ssh_config, timeout=timeout) as connection:
             return connection.commit_check(device_config, self._ignore_warning)
 
-    def _device_commit(self, device: Device, device_config: str,  # noqa: MC0001; pylint: disable=no-self-use
+    def _device_commit(self, device: Device, device_config: str,  # noqa: MC0001
                        attempt: int, *, message: str = '-') -> Tuple[bool, Optional[str]]:
         """Commit a new configuration to the device.
 
@@ -280,7 +280,7 @@ class Homer:
             if path.is_file() and path.suffix == Homer.OUT_EXTENSION:
                 path.unlink()
 
-    def _execute(self, callback: Callable, query: str, **kwargs: str) -> Tuple[Dict, DefaultDict]:  # noqa, mccabe: MC0001 too complex
+    def _execute(self, callback: Callable, query: str, **kwargs: str) -> Tuple[Dict, DefaultDict]:  # noqa: MC0001
         """Execute Homer based on the given action and query.
 
         Arguments:
