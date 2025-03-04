@@ -1,0 +1,182 @@
+{
+    "data": {
+      "interface_list": [
+        {
+          "name": "et-0/0/48",
+          "enabled": false,
+          "description": "",
+          "id": "34563",
+          "lag": null,
+          "parent": null,
+          "cable": null,
+          "type": "100gbase-x-qsfp28",
+          "mtu": null,
+          "mac_address": null,
+          "vrf": null,
+          "untagged_vlan": null,
+          "tagged_vlans": [],
+          "mode": "",
+          "ip_addresses": [],
+          "link_peers": [],
+          "connected_endpoints": [],
+          "mgmt_only": false
+        },
+        {
+          "name": "et-0/0/49",
+          "enabled": false,
+          "description": "",
+          "id": "34564",
+          "lag": null,
+          "parent": null,
+          "cable": null,
+          "type": "100gbase-x-qsfp28",
+          "mtu": null,
+          "mac_address": null,
+          "vrf": null,
+          "untagged_vlan": null,
+          "tagged_vlans": [],
+          "mode": "",
+          "ip_addresses": [],
+          "link_peers": [],
+          "connected_endpoints": [],
+          "mgmt_only": false
+        },
+        {
+          "name": "irb.2004",
+          "enabled": true,
+          "description": "Subnet public1-d-codfw",
+          "id": "35622",
+          "lag": null,
+          "parent": null,
+          "cable": null,
+          "type": "virtual",
+          "mtu": null,
+          "mac_address": null,
+          "vrf": {
+            "name": "PRODUCTION",
+            "rd": "5000"
+          },
+          "untagged_vlan": null,
+          "tagged_vlans": [],
+          "mode": "",
+          "ip_addresses": [
+            {
+              "id": "17461",
+              "address": "208.80.153.97/27",
+              "role": "anycast",
+              "family": {
+                "value": 4
+              }
+            },
+            {
+              "id": "17462",
+              "address": "2620:0:860:4::1/64",
+              "role": "anycast",
+              "family": {
+                "value": 6
+              }
+            }
+          ],
+          "link_peers": [],
+          "connected_endpoints": [],
+          "mgmt_only": false
+        },
+        {
+          "name": "ge-0/0/5",
+          "enabled": true,
+          "description": "",
+          "id": "37007",
+          "lag": null,
+          "parent": null,
+          "cable": {
+            "label": ""
+          },
+          "type": "1000base-t",
+          "mtu": 9192,
+          "mac_address": null,
+          "vrf": null,
+          "untagged_vlan": {
+            "name": "private1-d-codfw",
+            "vid": 2020
+          },
+          "tagged_vlans": [],
+          "mode": "access",
+          "ip_addresses": [],
+          "link_peers": [
+            {
+              "__typename": "InterfaceType"
+            }
+          ],
+          "connected_endpoints": [
+            {
+              "__typename": "InterfaceType",
+              "name": "eno1",
+              "device": {
+                "role": {
+                  "slug": "server"
+                },
+                "rack": {
+                  "name": "D5"
+                },
+                "name": "restbase2026",
+                "virtual_chassis": null
+              }
+            }
+          ],
+          "mgmt_only": false
+        },
+        {
+          "name": "et-0/0/1",
+          "enabled": true,
+          "description": "",
+          "id": "23",
+          "lag": null,
+          "parent": null,
+          "cable": {
+            "label": "1082"
+          },
+          "type": "40gbase-x-qsfpp",
+          "mtu": 9192,
+          "mac_address": null,
+          "vrf": null,
+          "untagged_vlan": null,
+          "tagged_vlans": [
+            {
+              "name": "XLink1",
+              "vid": 401
+            },
+            {
+              "name": "public1-ulsfo",
+              "vid": 1201
+            }
+          ],
+          "mode": "tagged",
+          "ip_addresses": [],
+          "link_peers": [
+            {
+              "__typename": "InterfaceType"
+            }
+          ],
+          "connected_endpoints": [
+            {
+              "__typename": "InterfaceType",
+              "name": "et-1/0/24",
+              "device": {
+                "role": {
+                  "slug": "asw"
+                },
+                "rack": {
+                  "name": "103.02.22"
+                },
+                "name": "asw2-22-ulsfo",
+                "virtual_chassis": {
+                  "domain": "asw2-ulsfo.mgmt.ulsfo.wmnet"
+                }
+              }
+            }
+          ],
+          "mgmt_only": false
+        }
+      ]
+    }
+  }

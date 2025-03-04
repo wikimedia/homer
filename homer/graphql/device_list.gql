@@ -1,0 +1,22 @@
+query ($role: [String!], $status: [String!]) {
+    device_list(filters: {role: $role, status: $status}) {
+        id
+        name
+        status
+        platform { slug }
+        site { slug }
+        device_type {
+            slug
+            manufacturer { slug }
+        }
+        role { slug }
+        primary_ip4 {
+            address
+            dns_name
+        }
+        primary_ip6 {
+            address
+            dns_name
+        }
+    }
+}

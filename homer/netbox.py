@@ -83,7 +83,25 @@ class BaseNetboxDeviceData(BaseNetboxData):
         """
         super().__init__(api, base_paths)
         self._device = device
+        self._device_interfaces: dict = {}
         self._device.metadata['netbox_object'] = api.dcim.devices.get(id=device.metadata['id'])
+
+    @property
+    def _gql_variables(self) -> dict[str, Any]:
+        """Returns the default GraphQL variables to inject into all queries.
+
+        Returns:
+            The variables dictionary
+
+        """
+        # Inject device_id
+        variables = {'device_id': str(self._device.metadata['id'])}
+
+        # Inject virtual_chassis_id if defined:
+        if self._device.metadata['netbox_object'].virtual_chassis:
+            variables['virtual_chassis_id'] = str(self._device.metadata['netbox_object'].virtual_chassis.id)
+
+        return variables
 
     def _gql_execute(self, query_name: str, variables: Optional[dict] = None) -> dict[str, Any]:
         """Exposes gql_execute to BaseNetboxDeviceData while injecting device variables.
@@ -96,18 +114,29 @@ class BaseNetboxDeviceData(BaseNetboxData):
             The result of the queried data.
 
         """
-        # Inject device_id
-        local_variables = {'device_id': str(self._device.metadata['id'])}
-
-        # Inject virtual_chassis_id if defined:
-        if self._device.metadata['netbox_object'].virtual_chassis:
-            local_variables.update({'virtual_chassis_id':
-                                    str(self._device.metadata['netbox_object'].virtual_chassis.id)})
-
+        default_variables = self._gql_variables
         # Variables passed as parameter take priority if any conflict
         if variables:
-            local_variables.update(variables)
-        return super()._gql_execute(query_name, local_variables)
+            default_variables.update(variables)
+
+        return super()._gql_execute(query_name, default_variables)
+
+    def fetch_device_interfaces(self) -> dict:
+        """Fetch interfaces from Netbox.
+
+        Returns:
+            the interfaces dictionary.
+
+        """
+        if not self._device_interfaces:
+            if self._device.metadata['netbox_object'].virtual_chassis:
+                query_name = 'interface_list_virtual_chassis'
+            else:
+                query_name = 'interface_list'
+            self._device_interfaces = gql_execute(
+                self._api, get_gql_query(query_name), self._gql_variables)['interface_list']
+
+        return self._device_interfaces
 
 
 class NetboxData(BaseNetboxData):
@@ -146,20 +175,22 @@ class NetboxDeviceData(BaseNetboxDeviceData):
             A list of circuits.
 
         """
-        device_id = self._device.metadata['netbox_object'].id
         circuits = {}
-        for a_int in self._api.dcim.interfaces.filter(device_id=device_id):
+        for a_int in self.fetch_device_interfaces():
             # b_int is either the patch panel interface facing out or the initial interface
             # if no patch panel
             # Using link_peers[0] to mimic pre-Netbox 3.3 behavior, when a cable only had one termination
             # per side. To be revisited if we start using the multi-termination feature
-            if a_int.link_peers_type == 'dcim.frontport' and a_int.link_peers[0].rear_port:
-                b_int = a_int.link_peers[0].rear_port
+            if (a_int['link_peers'] and a_int['link_peers'][0]['__typename'] == 'FrontPortType'
+                    and a_int['link_peers'][0]['rear_port']):
+                b_int = a_int['link_peers'][0]['rear_port']
             else:
                 # If the patch panel isn't patched through
                 b_int = a_int
-            if b_int.link_peers_type == 'circuits.circuittermination':
-                circuits[a_int.name] = dict(self._api.circuits.circuits.get(b_int.link_peers[0].circuit.id))
+
+            if b_int['link_peers'] and b_int['link_peers'][0]['__typename'] == 'CircuitTerminationType':
+                circuits[a_int['name']] = dict(
+                    self._api.circuits.circuits.get(int(b_int['link_peers'][0]['circuit']['id'])))
 
         return circuits
 
@@ -181,23 +212,23 @@ class NetboxDeviceData(BaseNetboxDeviceData):
 
         """
         vlans = {}
-        device_id = self._device.metadata['netbox_object'].id
 
-        for interface in self._api.dcim.interfaces.filter(device_id=device_id):
-            if interface.untagged_vlan and interface.untagged_vlan.vid not in vlans:
-                vlans[interface.untagged_vlan.vid] = interface.untagged_vlan
-            if interface.tagged_vlans:
-                for tagged_vlan in interface.tagged_vlans:
-                    if tagged_vlan.vid not in vlans:
-                        vlans[tagged_vlan.vid] = tagged_vlan
-            if interface.name.startswith('irb'):
-                vid = int(interface.name.split('.')[1])
+        for interface in self.fetch_device_interfaces():
+            if interface['untagged_vlan'] and interface['untagged_vlan']['vid'] not in vlans:
+                vlans[int(interface['untagged_vlan']['vid'])] = interface['untagged_vlan']
+            for tagged_vlan in interface['tagged_vlans']:
+                vid = int(tagged_vlan['vid'])
                 if vid not in vlans:
-                    vlan = self._api.ipam.vlans.get(vid=vid)
+                    vlans[vid] = tagged_vlan
+
+            if interface['name'].startswith('irb'):
+                vid = int(interface['name'].split('.')[1])
+                if vid not in vlans:
+                    vlan = dict(self._api.ipam.vlans.get(vid=vid))
                     try:
-                        vlans[vlan.vid] = vlan
-                    except AttributeError as e:
-                        raise HomerError(f'IRB interface {interface} does not match any Vlan in Netbox') from e
+                        vlans[vlan['vid']] = vlan
+                    except KeyError as e:
+                        raise HomerError(f'IRB interface {interface["name"]} does not match any Vlan in Netbox') from e
 
         return vlans
 
@@ -226,33 +257,9 @@ class NetboxInventory:
             A dictionary with the device FQDN as keys and a metadata dictionary as value.
 
         """
-        device_list_gql = """
-        query ($role: [String!], $status: [String!]) {
-            device_list(filters: {role: $role, status: $status}) {
-                id
-                name
-                status
-                platform { slug }
-                site { slug }
-                device_type {
-                    slug
-                    manufacturer { slug }
-                }
-                role { slug }
-                primary_ip4 {
-                    address
-                    dns_name
-                }
-                primary_ip6 {
-                    address
-                    dns_name
-                }
-            }
-        }
-        """
-
         devices: Dict[str, Dict[str, str]] = {}
 
+        device_list_gql = get_gql_query('device_list')
         variables = {'role': self._device_roles, 'status': self._device_statuses}
         devices_gql = gql_execute(self._api, device_list_gql, variables)['device_list']
 
@@ -282,6 +289,20 @@ class NetboxInventory:
             devices[fqdn] = metadata
 
         return devices
+
+
+def get_gql_query(name: str) -> str:
+    """Get one of the GraphQL query provided by Homer.
+
+    Arguments:
+        name: the name of the query file without extension.
+
+    Returns:
+        the query as string.
+
+    """
+    query_path = Path(__file__).resolve().parent / 'graphql' / f'{name}.gql'
+    return query_path.read_text()
 
 
 def gql_execute(api: pynetbox.api, query: str, variables: Optional[dict] = None) -> dict[str, Any]:

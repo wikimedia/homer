@@ -1,0 +1,76 @@
+query ($virtual_chassis_id: [String!]){
+    interface_list(filters: {virtual_chassis_id: $virtual_chassis_id}) {
+        name
+        enabled
+        description
+        id
+        lag { name }
+        parent { name }
+        cable { label }
+        type
+        mtu
+        mac_address
+        vrf {
+            name
+            rd
+        }
+        untagged_vlan {
+            name
+            vid
+            description
+            group { slug }
+        }
+        tagged_vlans {
+            name
+            vid
+            description
+            group { slug }
+        }
+        mode
+        ip_addresses {
+            id
+            address
+            role
+            family { value }
+        }
+        link_peers {
+            __typename
+            ... on FrontPortType {
+                name
+                device { name }
+                rear_port {
+                    name
+                    link_peers {
+                        __typename
+                        ... on CircuitTerminationType {
+                            circuit { id }
+                        }
+                    }
+                }
+            }
+            ... on CircuitTerminationType {
+                circuit {
+                    id
+                    type { name }
+                    provider { name }
+                    cid
+                    description
+                    termination_a { id }
+                    termination_z { upstream_speed }
+                }
+            }
+        }
+        connected_endpoints {
+            __typename
+            ... on InterfaceType {
+                name
+                device {
+                    role { slug }
+                    name
+                    virtual_chassis { domain }
+                }
+            }
+        }
+        mgmt_only
+    }
+}

@@ -178,6 +178,11 @@ class TestNetboxDeviceData:
         self.output, self.config = setup_tmp_path('config-netbox.yaml', tmp_path)
         self.netbox_data = NetboxDeviceDataGql(self.netbox_api, self.config['base_paths'], self.device)
         self.requests_mock = requests_mock
+        self.iface_1 = {'name': 'int1', 'link_peers':
+                        [{'__typename': 'CircuitTerminationType', 'circuit': {'id': '1'}}]}
+        self.iface_2 = {'name': 'int2', 'link_peers': [{'__typename': 'FrontPortType', 'rear_port': {
+            'name': 'int1', 'link_peers': [{'__typename': 'CircuitTerminationType', 'circuit': {'id': '1'}}]}}]}
+        self.iface_3 = {'name': 'int1', 'link_peers': [{'__typename': 'InterfaceType'}]}
 
     def test_init(self):
         """An instance of NetboxData should be also an instance of UserDict."""
@@ -209,6 +214,29 @@ class TestNetboxDeviceData:
         request = adapter.last_request.json()
         assert request['query'] == 'query () {\n    device_list() {\n        name\n    }\n}\n'
         assert request['variables'] == expected_variables
+
+    @pytest.mark.parametrize('virtual_chassis', (False, True))
+    def test_fetch_device_interfaces_uncached(self, virtual_chassis):
+        """It should gather the interfaces and return them."""
+        netbox_device = mock_netbox_device(
+            'device1.example.com', 'role1', 'site1', 'Active', virtual_chassis=virtual_chassis)
+        self.netbox_api.dcim.devices.get.return_value = netbox_device
+        device = Device(netbox_device.name, {'netbox_object': netbox_device, 'id': 123}, {}, {})
+        netbox_data = NetboxDeviceDataGql(self.netbox_api, self.config['base_paths'], device)
+        gql_data = {'data': {'interface_list': [self.iface_1, self.iface_2, self.iface_3]}}
+        self.requests_mock.register_uri('post', 'http://localhost/graphql/', json=gql_data)
+
+        assert netbox_data.fetch_device_interfaces() == [self.iface_1, self.iface_2, self.iface_3]
+
+    def test_fetch_device_interfaces_cached(self):
+        """It should gather the interfaces and return them."""
+        gql_data = {'data': {'interface_list': [self.iface_1, self.iface_2, self.iface_3]}}
+        self.requests_mock.register_uri('post', 'http://localhost/graphql/', json=gql_data)
+        assert self.netbox_data.fetch_device_interfaces() == [self.iface_1, self.iface_2, self.iface_3]
+        assert self.requests_mock.called
+        self.requests_mock.reset_mock()
+        assert self.netbox_data.fetch_device_interfaces() == [self.iface_1, self.iface_2, self.iface_3]
+        assert not self.requests_mock.called
 
     def test_get_virtual_chassis_members_no_virtual_chassis(self):
         """If a device is not part of a virtual chassis it should return None."""
@@ -254,50 +282,46 @@ class TestNetboxDeviceData:
 
     def test_get_circuits(self):
         """It should return all the circuits connected to a device."""
-        interface_1 = NetboxObject()
-        interface_1.link_peers_type = 'circuits.circuittermination'
-        interface_1.name = 'int1'
-        interface_1.link_peers = [NetboxObject()]
-        interface_1.link_peers[0].circuit = NetboxObject()
-        interface_1.link_peers[0].circuit.id = 1
-
-        interface_2 = NetboxObject()
-        interface_2.name = 'int2'
-        interface_2.link_peers_type = 'dcim.frontport'
-        interface_2.link_peers = [NetboxObject()]
-        interface_2.link_peers[0].rear_port = interface_1
-
-        interface_3 = NetboxObject()
-        interface_3.link_peers_type = 'dcim.interface'
-
+        gql_data = {'data': {'interface_list': [self.iface_1, self.iface_2, self.iface_3]}}
+        self.requests_mock.register_uri('post', 'http://localhost/graphql/', json=gql_data)
         self.netbox_api.circuits.circuits.get.return_value = {}
-        self.netbox_api.dcim.interfaces.filter.return_value = [interface_1, interface_2, interface_3]
 
         assert self.netbox_data['circuits'] == {'int1': {}, 'int2': {}}
-        self.netbox_api.dcim.interfaces.filter.assert_called_once()
         calls = [mock.call(1), mock.call(1)]
         self.netbox_api.circuits.circuits.get.assert_has_calls(calls)
 
     def test_get_vlans(self):
         """It should return the vlans defined on a device's interfaces."""
-        interface1 = NetboxObject()  # This is a fake interface object
-        interface1.untagged_vlan = NetboxObject()  # That interface have fake tagged and untagged vlans
-        interface1.untagged_vlan.vid = 666
-        interface1.tagged_vlans = [NetboxObject(), NetboxObject()]
-        interface1.tagged_vlans[0].vid = 667
-        interface1.tagged_vlans[1].vid = 667
-        interface1.name = 'int1'
-        interface2 = NetboxObject()  # This is a fake interface object
-        interface2.untagged_vlan = NetboxObject()  # That interface have fake tagged and untagged vlans
-        interface2.untagged_vlan.vid = 666
-        interface2.tagged_vlans = None
-        interface2.name = 'int2'
-        self.netbox_api.dcim.interfaces.filter.return_value = [interface1, interface2]
-        # We want the function with the fake inbound data to match the one untagged and tagged vlans
-        assert self.netbox_data['vlans'] == {666: interface1.untagged_vlan, 667: interface1.tagged_vlans[0]}
+        interface_list = json.loads(
+            Path(get_fixture_path('netbox', 'interface_list.json')).read_text(encoding='UTF-8')
+        )
+        self.requests_mock.register_uri('post', 'http://localhost/graphql/', json=interface_list)
 
-        # And we want the fake API to be called only once
-        self.netbox_api.dcim.interfaces.filter.assert_called_once()
+        irb_vlan = NetboxObject()
+        irb_vlan.vid = 2004
+        irb_vlan.name = "public1-d-codfw"
+        self.netbox_api.ipam.vlans.get.return_value = irb_vlan
+
+        # We want the function with the fake inbound data to match the one untagged and tagged vlans
+        assert self.netbox_data['vlans'] == {2020: {'name': 'private1-d-codfw', 'vid': 2020},
+                                             2004: {'name': 'public1-d-codfw', 'vid': 2004},
+                                             401: {'name': 'XLink1', 'vid': 401},
+                                             1201: {'name': 'public1-ulsfo', 'vid': 1201}
+                                             }
+
+    def test_get_vlans_missing_irb(self):
+        """It should return the vlans defined on a device's interfaces."""
+        interface_list = json.loads(
+            Path(get_fixture_path('netbox', 'interface_list.json')).read_text(encoding='UTF-8')
+        )
+        self.requests_mock.register_uri('post', 'http://localhost/graphql/', json=interface_list)
+
+        with pytest.raises(HomerError, match='Failed to get key vlans') as excinfo:
+            self.netbox_data['vlans']  # pylint: disable=pointless-statement
+
+        original_exception = excinfo.value.__cause__
+        assert isinstance(original_exception, HomerError)
+        assert str(original_exception) == "IRB interface irb.2004 does not match any Vlan in Netbox"
 
 
 class TestNetboxInventory:
