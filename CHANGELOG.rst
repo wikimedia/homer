@@ -1,6 +1,19 @@
 Homer Changelog
 ---------------
 
+`v0.8.0`_ (2025-04-02)
+^^^^^^^^^^^^^^^^^^^^^^
+
+New features
+""""""""""""
+
+* netbox: refactor support for GraphQL queries, exposing them also to plugins, fetching the GQL queries from file.
+
+Miscellanea
+"""""""""""
+
+* tests: fix newly reported issues.
+
 `v0.7.0`_ (2024-07-22)
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -472,3 +485,4 @@ Miscellanea
 .. _`v0.6.5`: https://github.com/wikimedia/homer/releases/tag/v0.6.5
 .. _`v0.6.6`: https://github.com/wikimedia/homer/releases/tag/v0.6.6
 .. _`v0.7.0`: https://github.com/wikimedia/homer/releases/tag/v0.7.0
+.. _`v0.8.0`: https://github.com/wikimedia/homer/releases/tag/v0.8.0
