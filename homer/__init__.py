@@ -40,7 +40,7 @@ except PackageNotFoundError:  # pragma: no cover - this should never happen duri
 logger = logging.getLogger(__name__)
 
 
-class Homer:
+class Homer:  # pylint: disable=too-many-instance-attributes
     """The instance to run Homer."""
 
     OUT_EXTENSION = '.out'
@@ -62,6 +62,7 @@ class Homer:
         self._netbox_api = None
         self._device_plugin = None
         self._capirca = None
+        self._netbox_data = None
         if self._main_config.get('netbox', {}):
             self._netbox_api = pynetbox.api(
                 self._main_config['netbox']['url'], token=self._main_config['netbox']['token'], threading=True)
@@ -74,6 +75,8 @@ class Homer:
             if self._main_config['netbox'].get('plugin', ''):
                 self._device_plugin = import_module(
                     self._main_config['netbox']['plugin']).NetboxDeviceDataPlugin
+
+            self._netbox_data = NetboxData(self._netbox_api, self._main_config['base_paths'])
 
             if not self._main_config.get('capirca', {}).get('disabled', False):
                 self._capirca = CapircaGenerate(self._main_config, self._netbox_api)
@@ -302,11 +305,6 @@ class Homer:
         """
         diffs: DefaultDict[str, list] = defaultdict(list)
         successes: Dict[bool, list] = {True: [], False: []}
-        netbox_data = None
-        if self._netbox_api is not None:
-            logger.info('Gathering global Netbox data')
-            netbox_data = NetboxData(self._netbox_api, self._main_config['base_paths'])
-
         for device in self._devices.query(query):
             logger.info('Generating configuration for %s', device.fqdn)
 
@@ -319,9 +317,9 @@ class Homer:
                     if generated_acls:
                         device_config.extend(generated_acls)
 
-                if netbox_data is not None:
+                if self._netbox_data is not None:
                     device_data['netbox'] = {
-                        'global': netbox_data,
+                        'global': self._netbox_data,
                         'device': NetboxDeviceData(self._netbox_api, self._main_config['base_paths'], device),
                     }
 

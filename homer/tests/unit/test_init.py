@@ -193,8 +193,9 @@ class TestHomerNetbox:
     """Homer class tests with Netbox enabled."""
 
     @pytest.fixture(autouse=True)
+    @mock.patch('homer.NetboxData', autospec=True)
     @mock.patch('homer.pynetbox.api')  # Pynetbox objects lazily resolve API objects, can't use autospec=True
-    def setup_method_fixture(self, mocked_pynetbox, requests_mock, tmp_path):
+    def setup_method_fixture(self, mocked_pynetbox, mocked_netbox_data, requests_mock, tmp_path):
         """Initialize the instance."""
         # pylint: disable=attribute-defined-outside-init
         self.output, self.config = setup_tmp_path('config-netbox.yaml', tmp_path)
@@ -209,6 +210,7 @@ class TestHomerNetbox:
         capirca_script.status = 'Completed'
         capirca_script.completed = '2025-04-01 10:00:00Z'
         capirca_script.data.output = 'device1 = 10.0.0.1\ndevices_group = device1'
+        mocked_netbox_data.return_value = {'netbox_key': 'netbox_value'}
 
         self.homer = homer.Homer(self.config)
 
@@ -219,10 +221,8 @@ class TestHomerNetbox:
                                                      threading=True)
 
     @mock.patch('homer.NetboxDeviceData', autospec=True)
-    @mock.patch('homer.NetboxData', autospec=True)
-    def test_execute_generate(self, mocked_netbox_data, mocked_netbox_device_data):
+    def test_execute_generate(self, mocked_netbox_device_data):
         """It should generate the configuration for the given device, including netbox data."""
-        mocked_netbox_data.return_value = {'netbox_key': 'netbox_value'}
         mocked_netbox_device_data.return_value = {'netbox_key': 'netbox_device_value'}
         ret = self.homer.generate('device*')
 
@@ -250,13 +250,12 @@ class TestHomerNetbox:
             assert textwrap.dedent(expected).lstrip('\n') == f.read()
 
     @mock.patch('homer.NetboxDeviceData', autospec=True)
-    @mock.patch('homer.NetboxData', autospec=True)
     @mock.patch('homer.NetboxInventory', autospec=True)
     @mock.patch('homer.transports.junos.ConnectedDevice', autospec=True)
     @pytest.mark.parametrize('name, suffix, port, timeout', (('device1', 'A', 22, 30),
                                                              ('device2', 'B', 2222, 10)))
     # pylint: disable-next=too-many-arguments,too-many-positional-arguments
-    def test_execute_diff_inventory(self, mocked_connected_device, mocked_netbox_inventory, mocked_netbox_data,
+    def test_execute_diff_inventory(self, mocked_connected_device, mocked_netbox_inventory,
                                     mocked_netbox_device_data, name, suffix, port, timeout):
         """It should generate the configuration for the given device, including netbox data."""
         fqdn = f'{name}.example.com'
@@ -270,7 +269,6 @@ class TestHomerNetbox:
                 'netbox_object': mock.MagicMock(),
             }
         }
-        mocked_netbox_data.return_value = {'netbox_key': 'netbox_value'}
         mocked_netbox_device_data.return_value = {'netbox_key': 'netbox_device_value'}
 
         ret = self.homer.diff(f'{fqdn}')
