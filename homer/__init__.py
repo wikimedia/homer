@@ -61,6 +61,7 @@ class Homer:
 
         self._netbox_api = None
         self._device_plugin = None
+        self._capirca = None
         if self._main_config.get('netbox', {}):
             self._netbox_api = pynetbox.api(
                 self._main_config['netbox']['url'], token=self._main_config['netbox']['token'], threading=True)
@@ -73,6 +74,9 @@ class Homer:
             if self._main_config['netbox'].get('plugin', ''):
                 self._device_plugin = import_module(
                     self._main_config['netbox']['plugin']).NetboxDeviceDataPlugin
+
+            if not self._main_config.get('capirca', {}).get('disabled', False):
+                self._capirca = CapircaGenerate(self._main_config, self._netbox_api)
 
         devices_all_config = load_yaml_config(
             os.path.join(self._main_config['base_paths']['public'], 'config', 'devices.yaml'))
@@ -310,9 +314,8 @@ class Homer:
                 device_config = []
                 device_data = self._config.get(device)
                 # Render the ACLs using Capirca
-                if 'capirca' in device_data and not self._main_config.get('capirca', {}).get('disabled', False):
-                    capirca = CapircaGenerate(self._main_config, device_data['capirca'], self._netbox_api)
-                    generated_acls = capirca.generate_acls()
+                if self._capirca is not None and 'capirca' in device_data:
+                    generated_acls = self._capirca.generate_acls(device_data['capirca'])
                     if generated_acls:
                         device_config.extend(generated_acls)
 

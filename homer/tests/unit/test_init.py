@@ -205,6 +205,10 @@ class TestHomerNetbox:
             Path(get_fixture_path('netbox', 'device_list.json')).read_text(encoding="UTF-8")
         )
         self.requests_mock.post('/graphql/', json=device_list)  # nosec
+        capirca_script = self.mocked_pynetbox.return_value.extras.scripts.get.return_value.result
+        capirca_script.status = 'Completed'
+        capirca_script.completed = '2025-04-01 10:00:00Z'
+        capirca_script.data.output = 'device1 = 10.0.0.1\ndevices_group = device1'
 
         self.homer = homer.Homer(self.config)
 
@@ -220,7 +224,6 @@ class TestHomerNetbox:
         """It should generate the configuration for the given device, including netbox data."""
         mocked_netbox_data.return_value = {'netbox_key': 'netbox_value'}
         mocked_netbox_device_data.return_value = {'netbox_key': 'netbox_device_value'}
-
         ret = self.homer.generate('device*')
 
         assert ret == 0

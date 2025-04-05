@@ -20,17 +20,15 @@ logger = logging.getLogger(__name__)
 class CapircaGenerate():
     """Class to generate ACLs with Capirca."""
 
-    def __init__(self, config: Mapping, device_policies: List[str], netbox: pynetbox.api):
+    def __init__(self, config: Mapping, netbox: pynetbox.api):
         """Initialize the instance.
 
         Arguments:
             config (dict): the Homer config.
-            device_policies (list): List of Capirca policies to generate.
             netbox (pynetbox.api): the Netbox API instance.
 
         """
         self._config = config
-        self._device_policies = device_policies
         self._public_policies_dir = Path(self._config['base_paths']['public'], 'policies')
         self._private_base_path = self._config['base_paths'].get('private', None)
         definitions_path = Path(self._config['base_paths']['public'], 'definitions')
@@ -52,8 +50,11 @@ class CapircaGenerate():
             # ParseNetworkList expects an array of lines, while Netbox API returns a string with \n
             self.definitions.ParseNetworkList(netbox_definitons.splitlines())
 
-    def generate_acls(self) -> List[str]:  # noqa: MC0001
+    def generate_acls(self, device_policies: List[str]) -> List[str]:  # noqa: MC0001
         """Generate the ACLs using Capirca lib.
+
+        Arguments:
+            device_policies (list): List of Capirca policies to generate.
 
         Returns:
             list: a list of policies as strings in the proper format.
@@ -66,7 +67,7 @@ class CapircaGenerate():
         # Store failures if any
         failures = []
         # Iterate over all policies defined for a given device
-        for policy_name in self._device_policies:
+        for policy_name in device_policies:
             # We don't know yet if the files below exist
             public_policy_file = Path(self._public_policies_dir, policy_name + '.yaml')
             private_policy_file = Path()
