@@ -9,17 +9,20 @@
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
+# documentation root, use pathlib's resolve() to make it absolute, like shown
+# here.
 #
 import os
 import sys
 
+from datetime import date
 from importlib.metadata import version as meta_version
+from pathlib import Path
 
 import sphinx_rtd_theme
 
 # Adjust path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir)))
+sys.path.insert(0, Path(__file__).parent.parent.resolve())
 
 
 # -- General configuration ------------------------------------------------
@@ -39,8 +42,11 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
+    'sphinx_autodoc_typehints',
     'sphinxarg.ext',
 ]
+if not os.environ.get("PYBUILD_NAME", ""):
+    extensions.append("sphinxcontrib.jquery")
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -57,7 +63,7 @@ master_doc = 'index'
 # General information about the project.
 project = 'Homer'
 title = f'{project} Documentation'
-copyright = ('2019-2021, Riccardo Coccioli <rcoccioli@wikimedia.org>, Arzhel Younsi <ayounsi@wikimedia.org>, '
+copyright = ('2019-{date.today().year}, Riccardo Coccioli <rcoccioli@wikimedia.org>, Arzhel Younsi <ayounsi@wikimedia.org>, '
              'Faidon Liambotis <faidon@wikimedia.org>, Wikimedia Foundation, Inc.')
 author = 'Riccardo Coccioli'
 
@@ -131,8 +137,19 @@ napoleon_use_admonition_for_notes = False
 napoleon_use_admonition_for_references = False
 napoleon_use_ivar = False
 napoleon_use_param = True
-napoleon_use_rtype = True
 napoleon_use_keyword = True
+napoleon_use_rtype = True
+napoleon_type_aliases = None
+napoleon_attr_annotations = True
+
+# Type hints settings
+typehints_fully_qualified = True
+always_document_param_types = False
+typehints_document_rtype = True
+typehints_use_rtype = True
+typehints_defaults = "comma"
+typehints_use_signature = True
+typehints_use_signature_return = True
 
 # Autodoc settings
 autodoc_default_options = {
@@ -146,21 +163,30 @@ autoclass_content = 'both'
 
 # -- Helper functions -----------------------------------------------------
 
-def skip_external_inherited(app, what, name, obj, skip, options):
-    """Skip methods inherited from external libraries."""
-    if not (what == 'class' and hasattr(obj, 'im_class') and obj.__name__ not in obj.im_class.__dict__):
-        return
+def filter_namedtuple_docstrings(app, what, name, obj, options, lines):
+    """Fix the automatically generated docstrings for namedtuples classes."""
+    if what == "property" and len(lines) == 1 and lines[0].startswith("Alias for field number"):
+        del lines[:]
 
-    classes = [obj.im_class]
-    while classes:
-        c = classes.pop()
-        if obj.__name__ in c.__dict__:  # Found the class that defined the method
-            return 'homer' not in c.__module__  # Skip if from external libraries
-        else:
-            classes = list(c.__bases__) + classes  # Continue in the inheritance tree
+
+# Keep track of documented classes to avoid annotating both class and __init__.
+# Necessary when using autoclass_content 'both' and add_abstract_annotations().
+_homer_documented_classes = set()
+
+
+def add_abstract_annotations(app, what, name, obj, options, lines):
+    """Workaround to add an abstract annotation for ABC abstract classes."""
+    if (
+        what == "class"
+        and len(getattr(obj, "__abstractmethods__", [])) > 0
+        and name not in _homer_documented_classes
+    ):
+        lines.insert(0, "``abstract``")
+        _homer_documented_classes.add(name)
 
 
 def setup(app):
-    """Register the filter_namedtuple_docstrings function."""
-    app.connect('autodoc-skip-member', skip_external_inherited)
-    app.add_css_file('theme_overrides.css')  # override wide tables in RTD theme
+    """Register the helper functions."""
+    app.connect("autodoc-process-docstring", filter_namedtuple_docstrings)
+    app.connect("autodoc-process-docstring", add_abstract_annotations)
+    app.add_css_file("theme_overrides.css")  # override wide tables in RTD theme
