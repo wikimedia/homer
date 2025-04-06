@@ -133,7 +133,7 @@ class TestHomer:
         assert "Changes for 1 devices: ['device1.example.com']\n# Failed" in out
 
     @mock.patch('builtins.input')
-    @mock.patch('homer.sys.stdout.isatty')
+    @mock.patch('homer.interactive.sys.stdout.isatty')
     @mock.patch('homer.transports.junos.JunOSDevice')
     def test_execute_commit_ok(self, mocked_device, mocked_isatty, mocked_input):
         """It should commit the compiled configuration to the device."""
@@ -145,7 +145,7 @@ class TestHomer:
         assert mocked_device.called
 
     @mock.patch('builtins.input')
-    @mock.patch('homer.sys.stdout.isatty')
+    @mock.patch('homer.interactive.sys.stdout.isatty')
     @mock.patch('homer.transports.junos.JunOSDevice')
     def test_execute_commit_timeout(self, mocked_device, mocked_isatty, mocked_input, caplog):
         """It should retry TIMEOUT_ATTEMPTS times and report the failure."""
@@ -159,7 +159,7 @@ class TestHomer:
         assert 'Attempt 3/3 failed' in caplog.text
 
     @mock.patch('builtins.input')
-    @mock.patch('homer.sys.stdout.isatty')
+    @mock.patch('homer.interactive.sys.stdout.isatty')
     @mock.patch('homer.transports.junos.JunOSDevice')
     @pytest.mark.parametrize('input_value, expected', (
         ('no', 'Commit aborted'),
@@ -177,7 +177,7 @@ class TestHomer:
         assert expected in caplog.text
         mocked_device.return_value.cu.commit.assert_not_called()
 
-    @mock.patch('homer.sys.stdout.isatty')
+    @mock.patch('homer.interactive.sys.stdout.isatty')
     @mock.patch('homer.transports.junos.JunOSDevice')
     def test_execute_commit_notty(self, mocked_device, mocked_isatty, caplog):
         """It should skip a device and log a warning if the commit is aborted."""

@@ -2,7 +2,6 @@
 import logging
 import os
 import pathlib
-import sys
 
 from collections import defaultdict
 from importlib import import_module
@@ -242,34 +241,13 @@ class Homer:  # pylint: disable=too-many-instance-attributes
             or not and a second element with a string or None that is not used but is required by the callback API.
 
         """
-        def callback(fqdn: str, diff: str) -> None:
-            """Callback as required by :py:class:`homer.transports.junos.ConnectedDevice.commit`."""
-            if not sys.stdout.isatty():
-                raise HomerError('Not in a TTY, unable to ask for confirmation')
-
-            print(f'Configuration diff for {fqdn}:\n{diff}')
-            print('Type "yes" to commit, "no" to abort.')
-
-            for _ in range(2):
-                resp = input('> ')
-                if resp == 'yes':
-                    break
-                if resp == 'no':
-                    raise HomerAbortError('Commit aborted')
-
-                print(('Invalid response, please type "yes" to commit or "no" to abort. After 2 wrong answers the '
-                       'commit will be aborted.'))
-            else:
-                raise HomerAbortError('Too many invalid answers, commit aborted')
-
         is_retry = attempt != 1
         timeout = device.metadata.get('timeout', self._transport_timeout)
         port = device.metadata.get('port', self._port)
         with connected_device(device.fqdn, username=self._transport_username, port=port,
                               ssh_config=self._transport_ssh_config, timeout=timeout) as connection:
             try:
-                connection.commit(device_config, message, callback, ignore_warning=self._ignore_warning,
-                                  is_retry=is_retry)
+                connection.commit(device_config, message, ignore_warning=self._ignore_warning, is_retry=is_retry)
                 return True, ''
             except HomerTimeoutError:
                 raise  # To be catched later for automatic retry

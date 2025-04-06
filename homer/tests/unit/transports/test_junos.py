@@ -101,63 +101,66 @@ class TestConnectedDevice:
         assert success
         assert diff == EXPECTED_DIFF
 
-    def test_commit_ok(self, mocked_junos_device):
+    @mock.patch('builtins.input')
+    @mock.patch('homer.interactive.sys.stdout.isatty')
+    def test_commit_ok(self, mocked_isatty, mocked_input, mocked_junos_device):
         """It should commit the new config."""
         mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
         mocked_junos_device.return_value.cu.diff.return_value = 'diff'
+        mocked_isatty.return_value = True
+        mocked_input.return_value = 'yes'
         device = junos.ConnectedDevice(self.fqdn)
-        callback = mock.Mock()
 
-        device.commit('config', COMMIT_MESSAGE, callback)
+        device.commit('config', COMMIT_MESSAGE)
 
-        callback.assert_called_once_with('device1.example.com', 'diff')
         mocked_junos_device.return_value.cu.commit.assert_called_once_with(
             confirm=2, comment=COMMIT_MESSAGE, timeout=30)
 
     @pytest.mark.parametrize('is_retry', (True, False))
     def test_commit_empty_diff(self, mocked_junos_device, is_retry):
-        """It should skip the callback on empty diff and based on the is_retry parameter run commit_check or not."""
+        """It should skip the approval on empty diff and based on the is_retry parameter run commit_check or not."""
         mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
         mocked_junos_device.return_value.cu.diff.return_value = None
         device = junos.ConnectedDevice(self.fqdn, timeout=10)
-        callback = mock.Mock()
 
-        device.commit('config', COMMIT_MESSAGE, callback, is_retry=is_retry)
+        device.commit('config', COMMIT_MESSAGE, is_retry=is_retry)
 
-        callback.assert_not_called()
         mocked_junos_device.return_value.cu.commit.assert_not_called()
         if is_retry:
             mocked_junos_device.return_value.cu.commit_check.assert_called_once_with(timeout=10)
         else:
             mocked_junos_device.return_value.cu.commit_check.assert_not_called()
 
-    def test_commit_abort(self, mocked_junos_device):
+    @mock.patch('builtins.input')
+    @mock.patch('homer.interactive.sys.stdout.isatty')
+    def test_commit_abort(self, mocked_isatty, mocked_input, mocked_junos_device):
         """It should abort the commit and not log exception."""
         mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
         mocked_junos_device.return_value.cu.diff.return_value = 'diff'
+        mocked_isatty.return_value = True
+        mocked_input.return_value = 'no'
         device = junos.ConnectedDevice(self.fqdn)
-        callback = mock.Mock()
-        callback.side_effect = HomerAbortError
 
         with pytest.raises(HomerAbortError):
-            device.commit('config', COMMIT_MESSAGE, callback)
+            device.commit('config', COMMIT_MESSAGE)
 
-        callback.assert_called_once_with('device1.example.com', 'diff')
         mocked_junos_device.return_value.cu.commit.assert_not_called()
 
-    def test_commit_timeout(self, mocked_junos_device):
+    @mock.patch('builtins.input')
+    @mock.patch('homer.interactive.sys.stdout.isatty')
+    def test_commit_timeout(self, mocked_isatty, mocked_input, mocked_junos_device):
         """It should catch the timeout exception separately."""
         mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
         mocked_junos_device.return_value.cu.diff.return_value = 'diff'
         mocked_junos_device.return_value.cu.commit.side_effect = RpcTimeoutError(
             mocked_junos_device, 'commit-configuration', 30)
+        mocked_isatty.return_value = True
+        mocked_input.return_value = 'yes'
         device = junos.ConnectedDevice(self.fqdn)
-        callback = mock.Mock()
 
         with pytest.raises(HomerTimeoutError):
-            device.commit('config', COMMIT_MESSAGE, callback)
+            device.commit('config', COMMIT_MESSAGE)
 
-        callback.assert_called_once_with('device1.example.com', 'diff')
         mocked_junos_device.return_value.cu.commit_check.assert_not_called()
 
     def test_commit_prepare_failed_load(self, mocked_junos_device):
@@ -166,11 +169,10 @@ class TestConnectedDevice:
         mocked_junos_device.return_value.cu.load.side_effect = ConfigLoadError(
             etree.XML(ERROR_RESPONSE.format(insert='')))
         device = junos.ConnectedDevice(self.fqdn)
-        callback = mock.Mock()
-        with pytest.raises(ConfigLoadError):
-            device.commit('config', COMMIT_MESSAGE, callback)
 
-        callback.assert_not_called()
+        with pytest.raises(ConfigLoadError):
+            device.commit('config', COMMIT_MESSAGE)
+
         mocked_junos_device.return_value.cu.commit.assert_not_called()
         mocked_junos_device.return_value.cu.rollback.assert_not_called()
 
@@ -179,24 +181,10 @@ class TestConnectedDevice:
         mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
         mocked_junos_device.return_value.cu.diff.side_effect = ValueError
         device = junos.ConnectedDevice(self.fqdn)
-        callback = mock.Mock()
+
         with pytest.raises(ValueError):
-            device.commit('config', COMMIT_MESSAGE, callback)
+            device.commit('config', COMMIT_MESSAGE)
 
-        callback.assert_not_called()
-        mocked_junos_device.return_value.cu.commit.assert_not_called()
-
-    def test_commit_callback_failed(self, mocked_junos_device):
-        """It should raise HomerError if the call to the callback fails."""
-        mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
-        mocked_junos_device.return_value.cu.diff.return_value = 'diff'
-        device = junos.ConnectedDevice(self.fqdn)
-        callback = mock.Mock()
-        callback.side_effect = RuntimeError
-        with pytest.raises(RuntimeError):
-            device.commit('config', COMMIT_MESSAGE, callback)
-
-        assert callback.called
         mocked_junos_device.return_value.cu.commit.assert_not_called()
 
     @pytest.mark.parametrize('insert, expected, remove_line', (
@@ -204,7 +192,11 @@ class TestConnectedDevice:
         ('', 'Commit error: CommitError', True),
         ('<ok/>', 'Commit error: CommitError', False),
     ))
-    def test_commit_commit_error(self, mocked_junos_device, insert, expected, remove_line):
+    @mock.patch('builtins.input')
+    @mock.patch('homer.interactive.sys.stdout.isatty')
+    def test_commit_commit_error(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+        self, mocked_isatty, mocked_input, mocked_junos_device, insert, expected, remove_line
+    ):
         """On CommitError it should raise HomerError with the error message from the CommitError."""
         mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
         mocked_junos_device.return_value.cu.diff.return_value = 'diff'
@@ -213,28 +205,30 @@ class TestConnectedDevice:
             error_response = ERROR_RESPONSE.replace('        <bad-element>Bad Element</bad-element>\n', '')
         mocked_junos_device.return_value.cu.commit.side_effect = CommitError(
             etree.XML(error_response.format(insert=insert)))
+        mocked_isatty.return_value = True
+        mocked_input.return_value = 'yes'
         device = junos.ConnectedDevice(self.fqdn, timeout=10)
-        callback = mock.Mock()
 
         with pytest.raises(HomerError, match=re.escape(expected)):
-            device.commit('config', COMMIT_MESSAGE, callback)
+            device.commit('config', COMMIT_MESSAGE)
 
-        callback.assert_called_once_with('device1.example.com', 'diff')
         mocked_junos_device.return_value.cu.commit.assert_called_once_with(
             confirm=2, comment=COMMIT_MESSAGE, timeout=10)
 
-    def test_commit_generic_error(self, mocked_junos_device):
+    @mock.patch('builtins.input')
+    @mock.patch('homer.interactive.sys.stdout.isatty')
+    def test_commit_generic_error(self, mocked_isatty, mocked_input, mocked_junos_device):
         """On any other exception it should raise HomerError."""
         mocked_junos_device.return_value.cu = mock.MagicMock(spec_set=junos.Config)
         mocked_junos_device.return_value.cu.diff.return_value = 'diff'
         mocked_junos_device.return_value.cu.commit.side_effect = ValueError
+        mocked_isatty.return_value = True
+        mocked_input.return_value = 'yes'
         device = junos.ConnectedDevice(self.fqdn)
-        callback = mock.Mock()
 
         with pytest.raises(ValueError):
-            device.commit('config', COMMIT_MESSAGE, callback)
+            device.commit('config', COMMIT_MESSAGE)
 
-        callback.assert_called_once_with('device1.example.com', 'diff')
         mocked_junos_device.return_value.cu.commit.assert_called_once_with(
             confirm=2, comment=COMMIT_MESSAGE, timeout=30)
 
