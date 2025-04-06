@@ -13,6 +13,7 @@ Homer Python API autodoc.
 
    homer.config
    homer.devices
+   homer.diff
    homer.exceptions
    homer.interactive
    homer.netbox

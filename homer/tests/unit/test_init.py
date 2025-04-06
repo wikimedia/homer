@@ -13,6 +13,7 @@ from lxml import etree
 import homer
 
 from homer.config import load_yaml_config
+from homer.diff import DiffStore
 from homer.tests import get_fixture_path
 from homer.tests.unit.transports.test_junos import ERROR_RESPONSE
 
@@ -46,6 +47,10 @@ class TestHomer:
         # pylint: disable=attribute-defined-outside-init
         self.output, self.config = setup_tmp_path('config.yaml', tmp_path)
         self.homer = homer.Homer(self.config)
+
+    def teardown_method(self):
+        """Cleanup."""
+        DiffStore.reset()
 
     def test_generate_ok(self):
         """It should generate the compiled configuration files for the matching devices."""
@@ -162,7 +167,7 @@ class TestHomer:
     @mock.patch('homer.interactive.sys.stdout.isatty')
     @mock.patch('homer.transports.junos.JunOSDevice')
     @pytest.mark.parametrize('input_value, expected', (
-        ('no', 'Commit aborted'),
+        ('no', 'Change rejected'),
         ('invalid', 'Too many invalid answers, commit aborted'),
     ))
     def test_execute_commit_abort(  # pylint: disable=too-many-arguments,too-many-positional-arguments
@@ -213,6 +218,10 @@ class TestHomerNetbox:
         mocked_netbox_data.return_value = {'netbox_key': 'netbox_value'}
 
         self.homer = homer.Homer(self.config)
+
+    def teardown_method(self):
+        """Cleanup."""
+        DiffStore.reset()
 
     def test_init(self):
         """The instance should have setup the Netbox API."""

@@ -1,0 +1,4 @@
+diff
+====
+
+.. automodule:: homer.diff

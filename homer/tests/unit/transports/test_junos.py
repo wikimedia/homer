@@ -9,7 +9,8 @@ from jnpr.junos.exception import CommitError, ConfigLoadError, ConnectError, Rpc
 from lxml import etree
 from ncclient.operations.errors import TimeoutExpiredError
 
-from homer.exceptions import HomerAbortError, HomerConnectError, HomerError, HomerTimeoutError
+from homer.diff import DiffStore
+from homer.exceptions import HomerConnectError, HomerError, HomerTimeoutError
 from homer.transports import junos
 
 
@@ -79,10 +80,14 @@ def test_connected_device_connect_error(mocked_device):
 class TestConnectedDevice:
     """ConnectedDevice class tests."""
 
-    def setup_method(self, _):
+    def setup_method(self):
         """Initialize the instance."""
         # pylint: disable=attribute-defined-outside-init
         self.fqdn = 'device1.example.com'
+
+    def teardown_method(self):
+        """Cleanup."""
+        DiffStore.reset()
 
     def test_init(self, mocked_junos_device):
         """It should connect to the device."""
@@ -141,7 +146,7 @@ class TestConnectedDevice:
         mocked_input.return_value = 'no'
         device = junos.ConnectedDevice(self.fqdn)
 
-        with pytest.raises(HomerAbortError):
+        with pytest.raises(HomerError):
             device.commit('config', COMMIT_MESSAGE)
 
         mocked_junos_device.return_value.cu.commit.assert_not_called()

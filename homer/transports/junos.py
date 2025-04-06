@@ -9,8 +9,9 @@ from jnpr.junos.exception import CommitError, ConfigLoadError, ConnectError, Rpc
 from jnpr.junos.utils.config import Config
 from ncclient.operations.errors import TimeoutExpiredError
 
+from homer.diff import DiffStore
 from homer.exceptions import HomerConnectError, HomerError, HomerTimeoutError
-from homer.interactive import ask_approval
+from homer.interactive import ApprovalStatus, ask_approval
 from homer.transports import DEFAULT_PORT, DEFAULT_TIMEOUT
 
 
@@ -74,7 +75,7 @@ class ConnectedDevice:
         self._device.open()
         self._device.bind(cu=Config)
 
-    def commit(self, config: str, message: str, *,  # noqa, mccabe: MC0001 too complex (11)
+    def commit(self, config: str, message: str, *,  # noqa: MC0001
                ignore_warning: Union[bool, str, List[str]] = False, is_retry: bool = False) -> None:
         """Commit the loaded configuration.
 
@@ -98,14 +99,34 @@ class ConnectedDevice:
                 logger.info('Empty diff for %s, skipping device.', self._fqdn)
                 return
         else:
-            print(f'Configuration diff for {self._fqdn}:\n{diff}')
-            try:
-                ask_approval()
-            except HomerError:
+            print(f'Change for {self._fqdn}:\n{diff}')
+            diff_store = DiffStore()
+            diff_status = diff_store.status(diff)
+            if diff_status is True:
+                logger.info('Committing already approved change on %s', self._fqdn)
+            elif diff_status is False:
+                logger.info('Skipping already rejected change on %s', self._fqdn)
                 self._rollback()
-                raise
+                return
+            else:
+                try:
+                    answer = ask_approval()
+                    if answer is ApprovalStatus.REJECT_SINGLE:
+                        raise HomerError('Change rejected')
+                    if answer is ApprovalStatus.REJECT_ALL:
+                        diff_store.reject(diff)
+                        raise HomerError('Change rejected for all devices')
+                    if answer is ApprovalStatus.APPROVE_ALL:
+                        diff_store.approve(diff)
+                        logger.info('Change approved for all devices')
+                    elif answer is not ApprovalStatus.APPROVE_SINGLE:
+                        raise HomerError(f'Unknown approval status {answer}')
+                except HomerError:
+                    self._rollback()
+                    raise
 
-        logger.info('Committing the configuration on %s', self._fqdn)
+                logger.info('Committing the change on %s', self._fqdn)
+
         try:
             if diff:
                 self._device.cu.commit(confirm=2, comment=message, timeout=self._timeout)

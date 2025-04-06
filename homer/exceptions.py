@@ -15,3 +15,7 @@ class HomerTimeoutError(HomerError):
 
 class HomerConnectError(HomerError):
     """Exception class raised when unable to connect to a device."""
+
+
+class HomerDiffError(HomerError):
+    """Exception class raised when attempting to store multiple diffs for the same device."""
