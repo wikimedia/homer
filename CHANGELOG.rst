@@ -1,6 +1,44 @@
 Homer Changelog
 ---------------
 
+`v0.9.0`_ (2025-04-14)
+^^^^^^^^^^^^^^^^^^^^^^
+
+New features
+""""""""""""
+
+* commit: allow to approve/reject diffs globally (`T250415`_):
+
+  * Add a ``diff`` module to manage device configuration diffs.
+  * Keep the implementation simple for now with just a singleton class ``DiffStore`` to be used as storage for the
+    configuration diffs approved or rejected for all next devices.
+  * Add an ``ApprovalStatus`` enum class to the ``interactive`` module to manage all the possible states a diff
+    approval can get.
+  * Make the ``ask_approval()`` method return the given choice.
+  * In the junos transport use the new features to allow to approve or reject a given configuration diff for the
+    current device only or for the current device and all future devices that will present the same diff in the
+    same Homer run.
+
+Minor improvements
+""""""""""""""""""
+
+* homer: move ``NetboxData`` initialization to ``__init__()`` given that is required for all operations if Netbox is
+  used.
+* capirca: change the ``CapircaGenerate`` constructor signature to be device-independent so that it can be
+  instantiated only once per homer run using the same script result from Netbox avoiding to get it for
+  each device. Move the device specific data to the ``generate_acls()`` method as it was already the only place
+  where it was used.
+* commit: refactor asking for approval moving the logic to ask the user for approval to commit a given device
+  configuration diff from a callbak to a dedicated interactive module. Simplify the signature of the transport commit
+  method as a result.
+
+Miscellanea
+"""""""""""
+
+* tox.ini: remove optimization for tox <4
+* doc: update documentation configuration to use sphinx type hints to automatically get the type hints from the
+  signatures and not from the docstrings. Fine tune the documentation configuration.
+
 `v0.8.0`_ (2025-04-02)
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -450,6 +488,7 @@ Miscellanea
 .. _`T244362`: https://phabricator.wikimedia.org/T244362
 .. _`T244363`: https://phabricator.wikimedia.org/T244363
 .. _`T249224`: https://phabricator.wikimedia.org/T249224
+.. _`T250415`: https://phabricator.wikimedia.org/T250415
 .. _`T253795`: https://phabricator.wikimedia.org/T253795
 .. _`T257392`: https://phabricator.wikimedia.org/T257392
 .. _`T260769`: https://phabricator.wikimedia.org/T260769
@@ -486,3 +525,4 @@ Miscellanea
 .. _`v0.6.6`: https://github.com/wikimedia/homer/releases/tag/v0.6.6
 .. _`v0.7.0`: https://github.com/wikimedia/homer/releases/tag/v0.7.0
 .. _`v0.8.0`: https://github.com/wikimedia/homer/releases/tag/v0.8.0
+.. _`v0.9.0`: https://github.com/wikimedia/homer/releases/tag/v0.9.0
