@@ -25,14 +25,14 @@ from homer.transports.junos import connected_device
 
 
 TIMEOUT_ATTEMPTS = 3
-""":py:class:`int`: the number of attempts to try when there is a timeout."""
+"""The number of attempts to try when there is a timeout."""
 DIFF_EXIT_CODE = 99
-""":py:class:`int`: the exit code used when the diff command is executed and there is a diff."""
+"""The exit code used when the diff command is executed and there is a diff."""
 
 
 try:
     __version__ = version(__name__)  # Must be the same used as 'name' in setup.py
-    """:py:class:`str`: the version of the current Homer package."""
+    """The version of the current Homer package."""
 except PackageNotFoundError:  # pragma: no cover - this should never happen during tests
     pass  # package is not installed
 
@@ -43,13 +43,13 @@ class Homer:  # pylint: disable=too-many-instance-attributes
     """The instance to run Homer."""
 
     OUT_EXTENSION = '.out'
-    """:py:class:`str`: the extension for the generated output files."""
+    """The extension for the generated output files."""
 
     def __init__(self, main_config: Mapping):
         """Initialize the instance.
 
         Arguments:
-            main_config (dict): the configuration dictionary.
+            main_config: the configuration dictionary.
 
         """
         logger.debug('Initialized with configuration: %s', main_config)
@@ -123,10 +123,10 @@ class Homer:  # pylint: disable=too-many-instance-attributes
         """Generate the configuration only saving it locally, no remote action is performed.
 
         Arguments:
-            query (str): the query to select the devices.
+            query: the query to select the devices.
 
         Return:
-            int: ``0`` on success, a small positive integer on failure.
+            ``0`` on success, a small positive integer on failure.
 
         """
         logger.info('Generating configuration for query %s', query)
@@ -138,11 +138,11 @@ class Homer:  # pylint: disable=too-many-instance-attributes
         """Generate the configuration and check the diff with the current live one.
 
         Arguments:
-            query (str): the query to select the devices.
-            omit_diff (bool, optional): whether to not show the actual diff to avoid leak of private data.
+            query: the query to select the devices.
+            omit_diff: whether to not show the actual diff to avoid leak of private data.
 
         Return:
-            int: ``0`` on success, a small positive integer on failure.
+            ``0`` on success, a small positive integer on failure.
 
         """
         logger.info('Generating diff for query %s', query)
@@ -172,11 +172,11 @@ class Homer:  # pylint: disable=too-many-instance-attributes
         """Commit the generated configuration asking for confirmation.
 
         Arguments:
-            query (str): the query to select the devices.
-            message (str): the commit message to use.
+            query: the query to select the devices.
+            message: the commit message to use.
 
         Return:
-            int: ``0`` on success, a small positive integer on failure.
+            ``0`` on success, a small positive integer on failure.
 
         """
         logger.info('Committing config for query %s with message: %s', query, message)
@@ -187,12 +187,12 @@ class Homer:  # pylint: disable=too-many-instance-attributes
         """Save the generated configuration in a local file.
 
         Arguments:
-            device (homer.devices.Device): the device instance.
-            device_config (str): the generated configuration for the device.
-            attempt (int, unused): the current attempt number.
+            device: the device instance.
+            device_config: the generated configuration for the device.
+            attempt: the current attempt number.
 
         Returns:
-            tuple: a two-element tuple with a boolean as first parameter that represent the success of the operation
+            A two-element tuple with a boolean as first parameter that represent the success of the operation
             or not and a second element with a string or None that is not used but is required by the callback API.
 
         """
@@ -207,12 +207,12 @@ class Homer:  # pylint: disable=too-many-instance-attributes
         """Perform a configuration diff between the generated configuration and the live one.
 
         Arguments:
-            device (homer.devices.Device): the device instance.
-            device_config (str): the generated configuration for the device.
-            attempt (int, unused): the current attempt number.
+            device: the device instance.
+            device_config: the generated configuration for the device.
+            attempt: the current attempt number.
 
         Returns:
-            tuple: a two-element tuple with a boolean as first parameter that represent the success of the operation
+            A two-element tuple with a boolean as first parameter that represent the success of the operation
             or not and a second element with a string that contains the configuration differences or None if unable
             to load the new configuration in the device to generate the diff.
 
@@ -228,16 +228,16 @@ class Homer:  # pylint: disable=too-many-instance-attributes
         """Commit a new configuration to the device.
 
         Arguments:
-            device (homer.devices.Device): the device instance.
-            device_config (str): the generated configuration for the device.
-            attempt (int): the current attempt number.
-            message (str): the commit message to use.
+            device: the device instance.
+            device_config: the generated configuration for the device.
+            attempt: the current attempt number.
+            message: the commit message to use.
 
         Raises:
             HomerTimeoutError: on timeout.
 
         Returns:
-            tuple: a two-element tuple with a boolean as first parameter that represent the success of the operation
+            A two-element tuple with a boolean as first parameter that represent the success of the operation
             or not and a second element with a string or None that is not used but is required by the callback API.
 
         """
@@ -270,12 +270,12 @@ class Homer:  # pylint: disable=too-many-instance-attributes
         """Execute Homer based on the given action and query.
 
         Arguments:
-            callback (Callable): the callback to call for each device.
-            query (str): the query to filter the devices to act on.
-            **kwargs (str): any additional keyword argument to pass to the callback
+            callback: the callback to call for each device.
+            query: the query to filter the devices to act on.
+            **kwargs: any additional keyword argument to pass to the callback
 
         Returns:
-            tuple: a two-element tuple, with the first item as a dictionary that contains two keys (:py:data:`True`
+            A two-element tuple, with the first item as a dictionary that contains two keys (:py:data:`True`
             and :py:data:`False`) and as value a list of device FQDN that were successful (True) or failed (False)
             the operation and a second element a :py:class:`collections.defaultdict` that has as keys the
             configuration differences and as values the list of device FQDN that reported that diff.
@@ -332,11 +332,11 @@ class Homer:  # pylint: disable=too-many-instance-attributes
         """Parse the results dictionary, log and return the appropriate exit status code.
 
         Arguments:
-            successes (dict): a dictionary that contains two keys (:py:data:`True` and :py:data:`False`) and as value
+            successes: a dictionary that contains two keys (:py:data:`True` and :py:data:`False`) and as value
                 a list of device FQDN that were successful (True) or failed (False) the operation.
 
         Return:
-            int: ``0`` on success, a small positive integer on failure.
+            ``0`` on success, a small positive integer on failure.
 
         """
         if successes[False]:

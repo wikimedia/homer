@@ -22,12 +22,11 @@ def ip_network_constructor(loader: yaml.loader.SafeLoader,
     """Casts a string into a ipaddress.ip_network or ip_interface object.
 
     Arguments:
-        loader (yaml loader): YAML loaded on which to apply the constructor
-        node: (str): string to be casted
+        loader: YAML loaded on which to apply the constructor.
+        node: string to be casted.
 
     Returns:
-        ipaddress: an IPv4 or v6 Network or Interface object
-        str: if not possible, return the original string
+        An IPv4 or IPv6 Network or Interface object if able to convert it, the original string otherwise.
 
     """
     value = str(loader.construct_scalar(node))
@@ -46,12 +45,11 @@ def ip_address_constructor(loader: yaml.loader.SafeLoader,
     """Casts a string into a ipaddress.ip_address object.
 
     Arguments:
-        loader (yaml loader): YAML loaded on which to apply the constructor
-        node: (str): string to be casted
+        loader: YAML loaded on which to apply the constructor.
+        node: string to be casted.
 
     Returns:
-        ipaddress: an IPv4 or v6 address object
-        str: if not possible, return the original string
+        An IPv4 or IPv6 Network or Interface object if able to convert it, the original string otherwise.
 
     """
     value = str(loader.construct_scalar(node))
@@ -66,13 +64,13 @@ def load_yaml_config(config_file: str) -> Dict:
     """Parse a YAML config file and return it.
 
     Arguments:
-        config_file (str): the path of the configuration file.
+        config_file: the path of the configuration file.
 
     Returns:
-        dict: the parsed config or an empty dictionary if the file doesn't exists.
+        The parsed config or an empty dictionary if the file doesn't exists.
 
     Raises:
-        HomerError: if failed to load the configuration.
+        homer.exceptions.HomerError: if failed to load the configuration.
 
     """
     network_re = re.compile(r"^(\d+\.\d+\.\d+\.\d+|(?:[\da-f]{0,4}:){2,7}[\da-f]{0,4})/\d+$")
@@ -106,12 +104,12 @@ class HierarchicalConfig:
         """Initialize the instance.
 
         Arguments:
-            base_path (str): the base path from where the configuration files should be loaded. The configuration
+            base_path: the base path from where the configuration files should be loaded. The configuration
                 files that will be loaded, if existing, are:
                 - ``common.yaml``: common key:value pairs
                 - ``roles.yaml``: one key for each role with key:value pairs of role-specific configuration
                 - ``sites.yaml``: one key for each site with key:value pairs of role-specific configuration
-            private_base_path (str, optional): the base path from where the private configuration files should be
+            private_base_path: the base path from where the private configuration files should be
                 loaded, with the same structure of the above ``base_path`` argument. If existing, private
                 configuration files cannot have top level keys in common with the public configuration.
 
@@ -130,13 +128,13 @@ class HierarchicalConfig:
         """Get the generated configuration for a specific device instance with all the overrides resolved.
 
         Arguments:
-            device (homer.devices.Device): the device instance.
+            device: the device instance.
 
         Raises:
             homer.exceptions.HomerError: if any top level key is present in both the private and public configuration.
 
         Returns:
-            dict: the generated device-specific configuration dictionary. The override order is:
+            The generated device-specific configuration dictionary. The override order is:
             ``common``, ``role``, ``site``, ``device``. Public and private configuration are merged together.
 
         """

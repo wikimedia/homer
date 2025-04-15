@@ -24,8 +24,8 @@ class CapircaGenerate():
         """Initialize the instance.
 
         Arguments:
-            config (dict): the Homer config.
-            netbox (pynetbox.api): the Netbox API instance.
+            config: the Homer config.
+            netbox: the Netbox API instance.
 
         """
         self._config = config
@@ -54,10 +54,10 @@ class CapircaGenerate():
         """Generate the ACLs using Capirca lib.
 
         Arguments:
-            device_policies (list): List of Capirca policies to generate.
+            device_policies: List of Capirca policies to generate.
 
         Returns:
-            list: a list of policies as strings in the proper format.
+            A list of policies as strings in the proper format.
 
         """
         generated_acls = []

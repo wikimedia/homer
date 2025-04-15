@@ -19,11 +19,10 @@ class Devices(UserDict):
         """Initialize the instance.
 
         Arguments:
-            devices (dict): the devices configuration with FQDN as key and a dictionary with the device metadata as
-                value.
-            devices_config (dict): the devices configuration with FQDN as key and a dictionary with the device-specific
+            devices: the devices configuration with FQDN as key and a dictionary with the device metadata as value.
+            devices_config: the devices configuration with FQDN as key and a dictionary with the device-specific
                 configuration as value.
-            private_config (dict, optional): an optional dictionary of the devices private configuration with the FQDN
+            private_config: an optional dictionary of the devices private configuration with the FQDN
                 as key and a dictionary of device-specific private configuration as value. It cannot have top level
                 keys in common with the same device public configuration.
 
@@ -44,13 +43,13 @@ class Devices(UserDict):
             If needed, expand the query capabilities with a proper syntax using pyparsing.
 
         Arguments:
-            query_string (str): the query_string to use to filter for.
+            query_string: the query_string to use to filter for.
 
         Raises:
             homer.exceptions.HomerError: on invalid query.
 
         Returns:
-            list: a list of Device objects.
+            A list of Device objects.
 
         """
         if ':' in query_string:  # Simple key-value query

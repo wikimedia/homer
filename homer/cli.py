@@ -13,7 +13,7 @@ def argument_parser() -> argparse.ArgumentParser:
     """Get the CLI argument parser.
 
     Returns:
-        argparse.ArgumentParser: the argument parser instance.
+        The argument parser instance.
 
     """
     parser = argparse.ArgumentParser(description="Configuration manager for network devices")
@@ -47,10 +47,10 @@ def main(argv: Optional[list] = None) -> int:
     """Run the Homer CLI.
 
     Arguments:
-        argv (list): the command line arguments to parse.
+        argv: the command line arguments to parse.
 
     Returns:
-        int: ``0`` on success, ``1`` on failure.
+        ``0`` on success, ``1`` on failure.
 
     """
     args = argument_parser().parse_args(argv)

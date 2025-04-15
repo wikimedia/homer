@@ -27,14 +27,14 @@ def connected_device(fqdn: str, *, username: str = '', ssh_config: Optional[str]
     """Context manager to perform actions on a connected Juniper device.
 
     Arguments:
-        fqdn (str): the FQDN of the Juniper device.
-        username (str): the username to use to connect to the Juniper device.
-        ssh_config (Optional[str]): an ssh_config file if you want other than ~/.ssh/config
-        port (int, optional): the port to use to connect to the device.
-        timeout (int, optional): the timeout in seconds to use when operating on the device.
+        fqdn: the FQDN of the Juniper device.
+        username: the username to use to connect to the Juniper device.
+        ssh_config: an ssh_config file if you want other than ~/.ssh/config
+        port: the port to use to connect to the device.
+        timeout: the timeout in seconds to use when operating on the device.
 
     Yields:
-        ConnectedDevice: the Juniper connected device instance.
+        The Juniper connected device instance.
 
     """
     try:
@@ -58,11 +58,11 @@ class ConnectedDevice:
         """Initialize the instance and open the connection to the device.
 
         Arguments:
-            fqdn (str): the FQDN of the Juniper device.
-            username (str): the username to use to connect to the Juniper device.
-            ssh_config (Optional[str]): an ssh_config file if you want other than ~/.ssh/config
-            port (int, optional): the port to use to connect to the device.
-            timeout (int, optional): the timeout in seconds to use when operating on the device.
+            fqdn: the FQDN of the Juniper device.
+            username: the username to use to connect to the Juniper device.
+            ssh_config: an ssh_config file if you want other than ~/.ssh/config
+            port: the port to use to connect to the device.
+            timeout: the timeout in seconds to use when operating on the device.
 
         """
         self._fqdn = fqdn
@@ -80,16 +80,16 @@ class ConnectedDevice:
         """Commit the loaded configuration.
 
         Arguments:
-            config (str): the device new configuration.
-            message (str): the commit message to use.
-            ignore_warning (mixed, optional): the warnings to tell JunOS to ignore, see:
+            config: the device new configuration.
+            message: the commit message to use.
+            ignore_warning: the warnings to tell JunOS to ignore, see:
                 https://junos-pyez.readthedocs.io/en/2.3.0/jnpr.junos.utils.html#jnpr.junos.utils.config.Config.load
-            is_retry (bool, optional): whether this is a retry and the commit_check should be run anyway, also if the
+            is_retry: whether this is a retry and the commit_check should be run anyway, also if the
                 diff is empty.
 
         Raises:
-            HomerTimeoutError: on timeout.
-            HomerError: on commit error.
+            homer.exceptions.HomerTimeoutError: on timeout.
+            homer.exceptions.HomerError: on commit error.
             Exception: on generic failure.
 
         """
@@ -141,10 +141,10 @@ class ConnectedDevice:
         """Perform commit check, reuturn the diff and rollback.
 
         Arguments:
-            config (str): the device new configuration.
+            config: the device new configuration.
 
         Returns:
-            tuple: a two-element tuple with a boolean as first item that is :py:data:`True` on success and
+            A two-element tuple with a boolean as first item that is :py:data:`True` on success and
             :py:data:`False` on failure and a string as second item with the difference between the current
             configuration and the new one, empty string on no diff and :py:data:`None` on failure.
 
@@ -192,13 +192,13 @@ class ConnectedDevice:
         """Prepare the new configuration to be committed.
 
         Arguments:
-            config (str): the device new configuration.
+            config: the device new configuration.
 
         Raises:
             Exception: on generic failure.
 
         Returns:
-            str: the differences between the current config and the new one.
+            The differences between the current config and the new one.
 
         """
         logger.debug('Preparing the configuration on %s', self._fqdn)
@@ -234,10 +234,10 @@ class ConnectedDevice:
         """Parse a CommitError exception and returnonly the reason.
 
         Arguments:
-            exc (jnpr.junos.exception.CommitError): the exception to parse.
+            exc: the exception to parse.
 
         Returns:
-            str: the reason for the commit errror.
+            The reason for the commit errror.
 
         """
         if exc.rsp.find('.//ok') is None:
@@ -252,7 +252,15 @@ class ConnectedDevice:
 
 
 def color_diff(diff: str) -> str:
-    """Color the diff based on JunOS diff syntax."""
+    """Color the diff based on JunOS diff syntax.
+
+    Arguments:
+        diff: the diff to color.
+
+    Returns:
+        The colored diff.
+
+    """
     lines = []
     for line in diff.splitlines():
         if line.startswith('+'):

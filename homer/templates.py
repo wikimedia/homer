@@ -19,9 +19,9 @@ class Renderer:
         """Initialize the instance.
 
         Arguments:
-            base_path (str): the base path to initialize the Jinja2 environment with. All templates path must be
+            base_path: the base path to initialize the Jinja2 environment with. All templates path must be
                 relative to this base path.
-            base_private_path (str, optional): a secondary base path to initialize the Jinja2 environment with.
+            base_private_path: a secondary base path to initialize the Jinja2 environment with.
                 Templates that are not found in base_path will be looked up in this secondary private location.
 
         """
@@ -40,15 +40,14 @@ class Renderer:
         """Render a template with the given data.
 
         Arguments:
-            template_name (str): the name of the template to load without the file extension.
-            data (dict): the dictionary of variables to pass to Jinja2 for replacement.
+            template_name: the name of the template to load without the file extension.
+            data: the dictionary of variables to pass to Jinja2 for replacement.
 
         Raises:
-            HomerError: on error.
+            homer.exceptions.HomerError: on error.
 
         Returns:
-            str: the rendered template on success.
-            None: on failure.
+            The rendered template.
 
         """
         template_file = f'{template_name}.conf'

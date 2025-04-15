@@ -24,8 +24,8 @@ class BaseNetboxData(UserDict):
         """Initialize the dictionary.
 
         Arguments:
-            api (pynetbox.api): the Netbox API instance.
-            base_paths (dict): The path to the public and private directories.
+            api: the Netbox API instance.
+            base_paths: The path to the public and private directories.
 
         """
         super().__init__()
@@ -39,7 +39,7 @@ class BaseNetboxData(UserDict):
         https://docs.python.org/3/reference/datamodel.html#object.__getitem__
 
         Returns:
-            mixed: the dynamically gathered data.
+            The dynamically gathered data.
 
         """
         method_name = f'_get_{key}'
@@ -55,7 +55,16 @@ class BaseNetboxData(UserDict):
         return self.data[key]
 
     def _gql_execute(self, query_name: str, variables: Optional[dict] = None) -> dict[str, Any]:
-        """Exposes gql_execute to BaseNetboxData."""
+        """Exposes gql_execute to BaseNetboxData.
+
+        Arguments:
+            query_name: the name of the file in the ``graphql`` directory without the ``.gql`` extension.
+            variables: the variables to pass to the GraphQL query.
+
+        Returns:
+            The result of the queried data.
+
+        """
         gql_query_path = Path(self._base_paths['public']) / 'graphql' / f'{query_name}.gql'
         return gql_execute(self._api, gql_query_path.read_text(), variables)
 
@@ -67,9 +76,9 @@ class BaseNetboxDeviceData(BaseNetboxData):
         """Initialize the dictionary.
 
         Arguments:
-            api (pynetbox.api): the Netbox API instance.
-            base_paths (dict): The path to the public and private directories.
-            device (homer.devices.Device): the device for which to gather the data.
+            api: the Netbox API instance.
+            base_paths: The path to the public and private directories.
+            device: the device for which to gather the data.
 
         """
         super().__init__(api, base_paths)
@@ -77,7 +86,16 @@ class BaseNetboxDeviceData(BaseNetboxData):
         self._device.metadata['netbox_object'] = api.dcim.devices.get(id=device.metadata['id'])
 
     def _gql_execute(self, query_name: str, variables: Optional[dict] = None) -> dict[str, Any]:
-        """Exposes gql_execute to BaseNetboxDeviceData while injecting device variables."""
+        """Exposes gql_execute to BaseNetboxDeviceData while injecting device variables.
+
+        Arguments:
+            query_name: the name of the file in the ``graphql`` directory without the ``.gql`` extension.
+            variables: the variables to pass to the GraphQL query.
+
+        Returns:
+            The result of the queried data.
+
+        """
         # Inject device_id
         local_variables = {'device_id': str(self._device.metadata['id'])}
 
@@ -99,7 +117,7 @@ class NetboxData(BaseNetboxData):
         """Returns all the vlans defined in Netbox.
 
         Returns:
-            list: a list of vlans.
+            A list of vlans.
 
         """
         return [dict(i) for i in self._api.ipam.vlans.all()]
@@ -112,8 +130,7 @@ class NetboxDeviceData(BaseNetboxDeviceData):
         """Returns a list of devices part of the same virtual chassis or None.
 
         Returns:
-            list: a list of devices.
-            None: the device is not part of a virtual chassis.
+            A list of devices or :py:data:`None` if the device is not part of a virtual chassis.
 
         """
         if not self._device.metadata['netbox_object'].virtual_chassis:
@@ -126,7 +143,7 @@ class NetboxDeviceData(BaseNetboxDeviceData):
         """Returns a list of circuits connected to the device.
 
         Returns:
-            list: A list of circuits.
+            A list of circuits.
 
         """
         device_id = self._device.metadata['netbox_object'].id
@@ -150,7 +167,7 @@ class NetboxDeviceData(BaseNetboxDeviceData):
         """Returns the list of inventory items on the device.
 
         Returns:
-            list: A list of inventory items.
+            A list of inventory items.
 
         """
         device_id = self._device.metadata['netbox_object'].id
@@ -160,7 +177,7 @@ class NetboxDeviceData(BaseNetboxDeviceData):
         """Returns all the vlans defined on a device.
 
         Returns:
-            dict: a dict of vlans.
+            A dict of vlans keyed by VLAN ID.
 
         """
         vlans = {}
@@ -192,10 +209,10 @@ class NetboxInventory:
         """Initialize the instance.
 
         Arguments:
-            api (pynetbox.api): the Netbox API instance.
-            config (dict): Homer's configuration section about Netbox
-            device_roles (list): a sequence of Netbox device role slug strings to filter the devices.
-            device_statuses (list): a sequence of Netbox device status label or value strings to filter the devices.
+            api: the Netbox API instance.
+            config: Homer's configuration section about Netbox
+            device_roles: a sequence of Netbox device role slug strings to filter the devices.
+            device_statuses: a sequence of Netbox device status label or value strings to filter the devices.
 
         """
         self._api = api
@@ -206,7 +223,7 @@ class NetboxInventory:
         """Get the devices based on role, status and virtual chassis membership.
 
         Returns:
-            dict: a dictionary with the device FQDN as keys and a metadata dictionary as value.
+            A dictionary with the device FQDN as keys and a metadata dictionary as value.
 
         """
         device_list_gql = """
@@ -271,12 +288,15 @@ def gql_execute(api: pynetbox.api, query: str, variables: Optional[dict] = None)
     """Parse the query into a gql query, execute and return the results.
 
     Arguments:
-        api (pynetbox.api): the Netbox API instance
-        query: a string representing the gql query
-        variables: A list of variables to send
+        api: the Netbox API instance.
+        query: a string representing the gql query.
+        variables: A list of variables to send.
+
+    Raises:
+        homer.exceptions.HomerError: if failed to query Netbox or no data was returned.
 
     Results:
-        dict: the results
+        The results of the query.
 
     """
     data: dict[str, Union[str, dict]] = {'query': query}
