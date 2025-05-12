@@ -1,6 +1,14 @@
 Homer Changelog
 ---------------
 
+`v0.10.1`_ (2025-05-12)
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Bug fixes
+"""""""""
+
+* setup.py: include the graphql query files that were not automatically included.
+
 `v0.10.0`_ (2025-05-12)
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -541,3 +549,4 @@ Miscellanea
 .. _`v0.8.0`: https://github.com/wikimedia/homer/releases/tag/v0.8.0
 .. _`v0.9.0`: https://github.com/wikimedia/homer/releases/tag/v0.9.0
 .. _`v0.10.0`: https://github.com/wikimedia/homer/releases/tag/v0.10.0
+.. _`v0.10.1`: https://github.com/wikimedia/homer/releases/tag/v0.10.1
