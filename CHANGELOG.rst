@@ -1,6 +1,20 @@
 Homer Changelog
 ---------------
 
+`v0.10.0`_ (2025-05-12)
+^^^^^^^^^^^^^^^^^^^^^^^
+
+New features
+""""""""""""
+
+* netbox: add a ``fetch_device_interfaces()`` method to ``BaseNetboxDeviceData`` to get all the device interfaces
+  using GraphQL queries. It works both with virtual chassis or plain devices.
+
+Miscellanea
+"""""""""""
+
+* docstrings: remove types from docstrings, they are now automatically detected from the type hints in the signatures.
+
 `v0.9.0`_ (2025-04-14)
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -526,3 +540,4 @@ Miscellanea
 .. _`v0.7.0`: https://github.com/wikimedia/homer/releases/tag/v0.7.0
 .. _`v0.8.0`: https://github.com/wikimedia/homer/releases/tag/v0.8.0
 .. _`v0.9.0`: https://github.com/wikimedia/homer/releases/tag/v0.9.0
+.. _`v0.10.0`: https://github.com/wikimedia/homer/releases/tag/v0.10.0
