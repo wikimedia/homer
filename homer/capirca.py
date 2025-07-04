@@ -37,8 +37,8 @@ class CapircaGenerate():
         if self._config.get('capirca', {}).get('netbox_definitons', True) and netbox:
             try:
                 script_result = netbox.extras.scripts.get('capirca.GetHosts').result
-                if str(script_result.status) != 'Completed':
-                    raise HomerError(f'Netbox capirca.GetHosts script status is: {script_result.status}.')
+                if not script_result.completed:
+                    raise HomerError('Netbox capirca.GetHosts script is not completed or has not been run.')
                 runtime = datetime.fromisoformat(script_result.completed[:-1])  # To remove the final Z
                 now = datetime.utcnow()
                 # Warn the user if the Netbox data is 3 day old or more
