@@ -248,7 +248,7 @@ class TestConnectedDevice:
         assert success
         assert diff == 'diff'
         mocked_junos_device.return_value.cu.commit_check.assert_called_once_with(timeout=30)
-        mocked_junos_device.return_value.cu.rollback.assert_called_once_with()
+        mocked_junos_device.return_value.cu.rollback.assert_called_once_with(ignore_warning=False)
 
     def test_commit_check_commit_error(self, mocked_junos_device, caplog):
         """On CommitError it should log the error message from the CommitError."""
@@ -264,7 +264,7 @@ class TestConnectedDevice:
         assert diff == 'diff'
         assert f'Commit check error on {self.fqdn}: Error Message\nIn Error Path (Bad Element)' in caplog.text
         mocked_junos_device.return_value.cu.commit_check.assert_called_once_with(timeout=30)
-        mocked_junos_device.return_value.cu.rollback.assert_called_once_with()
+        mocked_junos_device.return_value.cu.rollback.assert_called_once_with(ignore_warning=False)
 
     def test_commit_check_generic_error(self, mocked_junos_device, caplog):
         """On any other exception it should log the stacktrace from the exception."""
@@ -280,7 +280,7 @@ class TestConnectedDevice:
         assert diff == 'diff'
         assert f'Failed to commit check on {self.fqdn}: Error Message' in caplog.text
         mocked_junos_device.return_value.cu.commit_check.assert_called_once_with(timeout=10)
-        mocked_junos_device.return_value.cu.rollback.assert_called_once_with()
+        mocked_junos_device.return_value.cu.rollback.assert_called_once_with(ignore_warning=False)
 
     def test_commit_check_rollback_value_error(self, mocked_junos_device, caplog):
         """It should log any rollback ValueError exception."""
@@ -295,7 +295,7 @@ class TestConnectedDevice:
         assert diff == 'diff'
         assert f'Invalid rollback ID on {self.fqdn}: 50' in caplog.text
         mocked_junos_device.return_value.cu.commit_check.assert_called_once_with(timeout=30)
-        mocked_junos_device.return_value.cu.rollback.assert_called_once_with()
+        mocked_junos_device.return_value.cu.rollback.assert_called_once_with(ignore_warning=False)
 
     def test_commit_check_rollback_error(self, mocked_junos_device, caplog):
         """It should log any rollback generic error."""
@@ -311,7 +311,7 @@ class TestConnectedDevice:
         assert diff == 'diff'
         assert f'Failed to rollback on {self.fqdn}: RpcTimeoutError' in caplog.text
         mocked_junos_device.return_value.cu.commit_check.assert_called_once_with(timeout=30)
-        mocked_junos_device.return_value.cu.rollback.assert_called_once_with()
+        mocked_junos_device.return_value.cu.rollback.assert_called_once_with(ignore_warning=False)
 
     def test_close_ok(self, mocked_junos_device):
         """It should unlock and close the connection."""

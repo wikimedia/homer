@@ -82,8 +82,9 @@ class ConnectedDevice:
         Arguments:
             config: the device new configuration.
             message: the commit message to use.
-            ignore_warning: the warnings to tell JunOS to ignore, see:
+            ignore_warning: the warnings to tell JunOS to ignore, see below docs
                 https://junos-pyez.readthedocs.io/en/2.3.0/jnpr.junos.utils.html#jnpr.junos.utils.config.Config.load
+                also note the comments in the pyez decorators.py, substring match is default, regex is also possible
             is_retry: whether this is a retry and the commit_check should be run anyway, also if the
                 diff is empty.
 
@@ -106,7 +107,7 @@ class ConnectedDevice:
                 logger.info('Committing already approved change on %s', self._fqdn)
             elif diff_status is False:
                 logger.info('Skipping already rejected change on %s', self._fqdn)
-                self._rollback()
+                self._rollback(ignore_warning=ignore_warning)
                 return
             else:
                 try:
@@ -122,7 +123,7 @@ class ConnectedDevice:
                     elif answer is not ApprovalStatus.APPROVE_SINGLE:
                         raise HomerError(f'Unknown approval status {answer}')
                 except HomerError:
-                    self._rollback()
+                    self._rollback(ignore_warning=ignore_warning)
                     raise
 
                 logger.info('Committing the change on %s', self._fqdn)
@@ -155,12 +156,12 @@ class ConnectedDevice:
         except Exception as e:  # pylint: disable=broad-except
             logger.error('Failed to get diff for %s: %s', self._fqdn, e)
             logger.debug('Traceback:', exc_info=True)
-            self._rollback()
+            self._rollback(ignore_warning=ignore_warning)
             return False, None
 
         if not diff:
             logger.info('Empty diff for %s, skipping device.', self._fqdn)
-            self._rollback()
+            self._rollback(ignore_warning=ignore_warning)
             return True, diff
 
         logger.info('Running commit check on %s', self._fqdn)
@@ -173,7 +174,7 @@ class ConnectedDevice:
             logger.error('Failed to commit check on %s: %s', self._fqdn, e)
             logger.debug('Traceback:', exc_info=True)
         finally:
-            self._rollback()
+            self._rollback(ignore_warning=ignore_warning)
 
         return success, diff
 
@@ -206,11 +207,11 @@ class ConnectedDevice:
         try:
             self._device.cu.lock()
             self._device.cu.load(config, format='text', merge=False, ignore_warning=ignore_warning)
-            diff = self._device.cu.diff()
+            diff = self._device.cu.diff(ignore_warning=ignore_warning)
         except ConfigLoadError:
             raise
         except Exception:
-            self._rollback()
+            self._rollback(ignore_warning=ignore_warning)
             raise
 
         if diff is None:
@@ -218,11 +219,11 @@ class ConnectedDevice:
 
         return color_diff(diff)
 
-    def _rollback(self) -> None:
+    def _rollback(self, ignore_warning: Union[bool, str, List[str]] = False) -> None:
         """Rollback the current staged configuration."""
         logger.debug('Rolling back staged config on %s', self._fqdn)
         try:
-            self._device.cu.rollback()
+            self._device.cu.rollback(ignore_warning=ignore_warning)
         except ValueError as e:
             logger.error('Invalid rollback ID on %s: %s', self._fqdn, e)
         except Exception as e:  # pylint: disable=broad-except
