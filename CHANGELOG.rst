@@ -1,6 +1,25 @@
 Homer Changelog
 ---------------
 
+`v0.10.2`_ (2025-07-24)
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Minor improvements
+""""""""""""""""""
+
+* capirca.py: handle situation if netbox script has never run more gracefully.
+
+Bug fixes
+"""""""""
+
+* transports.junos: pass ignore_warning strings when running diff() and rollback() RPCs, which is needed
+  to handle changes in chassis port speed configuration.
+
+Miscellanea
+"""""""""""
+
+* setup.py: pin prospector to ensure it works in CI.
+
 `v0.10.1`_ (2025-05-12)
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -550,3 +569,4 @@ Miscellanea
 .. _`v0.9.0`: https://github.com/wikimedia/homer/releases/tag/v0.9.0
 .. _`v0.10.0`: https://github.com/wikimedia/homer/releases/tag/v0.10.0
 .. _`v0.10.1`: https://github.com/wikimedia/homer/releases/tag/v0.10.1
+.. _`v0.10.2`: https://github.com/wikimedia/homer/releases/tag/v0.10.2
