@@ -2,7 +2,7 @@
 import logging
 
 from contextlib import contextmanager
-from typing import Iterator, List, Optional, Tuple, Union
+from typing import Iterator, Optional, Tuple, Union
 
 from jnpr.junos import Device as JunOSDevice
 from jnpr.junos.exception import CommitError, ConfigLoadError, ConnectError, RpcTimeoutError, UnlockError
@@ -12,16 +12,15 @@ from ncclient.operations.errors import TimeoutExpiredError
 from homer.diff import DiffStore
 from homer.exceptions import HomerConnectError, HomerError, HomerTimeoutError
 from homer.interactive import ApprovalStatus, ask_approval
-from homer.transports import DEFAULT_PORT, DEFAULT_TIMEOUT
+from homer.templates import DeviceConfigurationBase
+from homer.transports import color_diff, DEFAULT_PORT, DEFAULT_TIMEOUT
 
 
 logger = logging.getLogger(__name__)
-DIFF_ADDED_CODE = 32
-DIFF_REMOVED_CODE = 31
-DIFF_MOVED_CODE = 33
 
 
 @contextmanager
+# pylint: disable-next=too-many-arguments
 def connected_device(fqdn: str, *, username: str = '', ssh_config: Optional[str] = None,
                      port: int = DEFAULT_PORT, timeout: int = DEFAULT_TIMEOUT) -> Iterator['ConnectedDevice']:
     """Context manager to perform actions on a connected Juniper device.
@@ -75,8 +74,8 @@ class ConnectedDevice:
         self._device.open()
         self._device.bind(cu=Config)
 
-    def commit(self, config: str, message: str, *,  # noqa: MC0001
-               ignore_warning: Union[bool, str, List[str]] = False, is_retry: bool = False) -> None:
+    def commit(self, config: DeviceConfigurationBase, message: str, *,  # noqa: MC0001
+               ignore_warning: Union[bool, str, list[str]] = False, is_retry: bool = False) -> None:
         """Commit the loaded configuration.
 
         Arguments:
@@ -137,9 +136,9 @@ class ConnectedDevice:
         except CommitError as e:
             raise HomerError(f'Commit error: {ConnectedDevice._parse_commit_error(e)}') from e
 
-    def commit_check(self, config: str,
-                     ignore_warning: Union[bool, str, List[str]] = False) -> Tuple[bool, Optional[str]]:
-        """Perform commit check, reuturn the diff and rollback.
+    def commit_check(self, config: DeviceConfigurationBase,
+                     ignore_warning: Union[bool, str, list[str]] = False) -> Tuple[bool, Optional[str]]:
+        """Perform commit check, return the diff and rollback.
 
         Arguments:
             config: the device new configuration.
@@ -189,7 +188,7 @@ class ConnectedDevice:
         except (RpcTimeoutError, TimeoutExpiredError) as e:
             logger.warning('Unable to close the connection to the device: %s', e)
 
-    def _prepare(self, config: str, ignore_warning: Union[bool, str, List[str]] = False) -> str:
+    def _prepare(self, config: DeviceConfigurationBase, ignore_warning: Union[bool, str, list[str]] = False) -> str:
         """Prepare the new configuration to be committed.
 
         Arguments:
@@ -206,7 +205,7 @@ class ConnectedDevice:
         diff = ''
         try:
             self._device.cu.lock()
-            self._device.cu.load(config, format='text', merge=False, ignore_warning=ignore_warning)
+            self._device.cu.load(str(config), format='text', merge=False, ignore_warning=ignore_warning)
             diff = self._device.cu.diff(ignore_warning=ignore_warning)
         except ConfigLoadError:
             raise
@@ -219,7 +218,7 @@ class ConnectedDevice:
 
         return color_diff(diff)
 
-    def _rollback(self, ignore_warning: Union[bool, str, List[str]] = False) -> None:
+    def _rollback(self, ignore_warning: Union[bool, str, list[str]] = False) -> None:
         """Rollback the current staged configuration."""
         logger.debug('Rolling back staged config on %s', self._fqdn)
         try:
@@ -250,36 +249,3 @@ class ConnectedDevice:
             except AttributeError:
                 pass
         return str(exc)
-
-
-def color_diff(diff: str) -> str:
-    """Color the diff based on JunOS diff syntax.
-
-    Arguments:
-        diff: the diff to color.
-
-    Returns:
-        The colored diff.
-
-    """
-    lines = []
-    for line in diff.splitlines():
-        if line.startswith('+'):
-            code = DIFF_ADDED_CODE
-        elif line.startswith('-'):
-            code = DIFF_REMOVED_CODE
-        elif line.startswith('!'):
-            code = DIFF_MOVED_CODE
-        else:
-            code = 0
-
-        if code:
-            line = f'\x1b[{code}m{line}\x1b[39m'
-
-        lines.append(line)
-
-    colored_diff = '\n'.join(lines)
-    if diff and diff[-1] == '\n':  # Re-add the last trailing newline if present
-        colored_diff += '\n'
-
-    return colored_diff

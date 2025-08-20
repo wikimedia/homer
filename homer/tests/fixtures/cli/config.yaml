@@ -5,3 +5,11 @@ base_paths:
 transports:
   username: user
   ssh_config: ~/.ssh/config.homer
+
+selectors:
+  renderer:
+    python:
+      - manufacturer: nokia
+  transport:
+    json_rpc:
+      - manufacturer: nokia

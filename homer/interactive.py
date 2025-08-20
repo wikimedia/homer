@@ -38,12 +38,12 @@ def ask_approval() -> ApprovalStatus:
         'commit or abort the commit for this device and all next devices with the same diff.'
     )
     print(message)
-    valid_asnwers = {status.value: status for status in ApprovalStatus}
+    valid_answers = {status.value: status for status in ApprovalStatus}
 
     for _ in range(2):
         answer = input('> ')
-        if answer in valid_asnwers.keys():
-            return valid_asnwers[answer]
+        if answer in valid_answers.keys():
+            return valid_answers[answer]
 
         print('Invalid response, After 2 wrong answers the commit will be aborted.')
 

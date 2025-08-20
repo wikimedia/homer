@@ -371,7 +371,8 @@ class TestNetboxInventory:
         for device in self.selected_devices:
             fqdn = ""
             expected_device = {'site': device.site.slug, 'role': device.role.slug,
-                               'type': device.device_type.slug, 'status': device.status.value, 'id': device.id}
+                               'type': device.device_type.slug, 'status': device.status.value,
+                               'manufacturer': device.device_type.manufacturer.slug, 'id': device.id}
             if device.primary_ip4 is not None:
                 expected_device['ip4'] = '192.0.2.42'
                 fqdn = device.primary_ip4.dns_name

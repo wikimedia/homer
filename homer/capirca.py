@@ -4,11 +4,11 @@ import logging
 
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import List, Mapping
+from typing import List, Mapping, Union
 
 import pynetbox
 
-from aerleon.lib import juniper, junipersrx, naming, policy
+from aerleon.lib import juniper, junipersrx, naming, nokiasrl, policy
 from aerleon.lib import yaml as aerleon_yaml
 from requests.exceptions import RequestException
 
@@ -24,8 +24,8 @@ class CapircaGenerate():
         """Initialize the instance.
 
         Arguments:
-            config: the Homer config.
-            netbox: the Netbox API instance.
+            config (dict): the Homer config.
+            netbox (pynetbox.api): the Netbox API instance.
 
         """
         self._config = config
@@ -50,17 +50,18 @@ class CapircaGenerate():
             # ParseNetworkList expects an array of lines, while Netbox API returns a string with \n
             self.definitions.ParseNetworkList(netbox_definitons.splitlines())
 
-    def generate_acls(self, device_policies: List[str]) -> List[str]:  # noqa: MC0001
+    # pylint: disable-next=too-many-branches
+    def generate_acls(self, device_policies: List[str]) -> list[Union[str, dict]]:  # noqa: MC0001
         """Generate the ACLs using Capirca lib.
 
         Arguments:
-            device_policies: List of Capirca policies to generate.
+            device_policies (list): List of Capirca policies to generate.
 
         Returns:
-            A list of policies as strings in the proper format.
+            list: a list of policies as strings in the proper format.
 
         """
-        generated_acls = []
+        generated_acls: list[Union[str, dict]] = []
         if self._private_base_path:
             private_policies_dir = Path(self._private_base_path, 'policies')
 
@@ -110,6 +111,10 @@ class CapircaGenerate():
                 if 'srx' in platforms:
                     found_platform = True
                     generated_acls.append(str(junipersrx.JuniperSRX(policy_object, exp_info=2)))
+                if 'nokiasrl' in platforms:
+                    found_platform = True
+                    for acl_filter in nokiasrl.NokiaSRLinux(policy_object, exp_info=2).acl_sets:
+                        generated_acls.append(dict(acl_filter['acl-filter']))
                 if not found_platform:
                     failures.append(f"Unknown platform: {platforms}.")
 

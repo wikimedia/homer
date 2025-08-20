@@ -1,11 +1,15 @@
 """Homer package."""
+import json
 import logging
 import os
 import pathlib
+import sys
+
 
 from collections import defaultdict
 from importlib import import_module
 from importlib.metadata import PackageNotFoundError, version
+from pathlib import Path
 from typing import Callable, DefaultDict, Dict, List, Mapping, Optional, Tuple
 
 import pynetbox
@@ -19,16 +23,13 @@ from homer.config import HierarchicalConfig, load_yaml_config
 from homer.devices import Device, Devices
 from homer.exceptions import HomerAbortError, HomerConnectError, HomerError, HomerTimeoutError
 from homer.netbox import NetboxData, NetboxDeviceData, NetboxInventory
-from homer.templates import Renderer
-from homer.transports import DEFAULT_PORT, DEFAULT_TIMEOUT
-from homer.transports.junos import connected_device
-
+from homer.templates import DeviceConfigurationBase, JinjaDeviceConfiguration, JinjaRenderer, PythonRenderer
+from homer.transports import DEFAULT_JSONRPC_PORT, DEFAULT_PORT, DEFAULT_TIMEOUT, json_rpc, junos
 
 TIMEOUT_ATTEMPTS = 3
 """The number of attempts to try when there is a timeout."""
 DIFF_EXIT_CODE = 99
 """The exit code used when the diff command is executed and there is a diff."""
-
 
 try:
     __version__ = version(__name__)  # Must be the same used as 'name' in setup.py
@@ -45,7 +46,7 @@ class Homer:  # pylint: disable=too-many-instance-attributes
     OUT_EXTENSION = '.out'
     """The extension for the generated output files."""
 
-    def __init__(self, main_config: Mapping):
+    def __init__(self, main_config: Mapping):  # noqa: MC0001
         """Initialize the instance.
 
         Arguments:
@@ -61,7 +62,6 @@ class Homer:  # pylint: disable=too-many-instance-attributes
         self._netbox_api = None
         self._device_plugin = None
         self._capirca = None
-        self._netbox_data = None
         if self._main_config.get('netbox', {}):
             self._netbox_api = pynetbox.api(
                 self._main_config['netbox']['url'], token=self._main_config['netbox']['token'], threading=True)
@@ -74,9 +74,6 @@ class Homer:  # pylint: disable=too-many-instance-attributes
             if self._main_config['netbox'].get('plugin', ''):
                 self._device_plugin = import_module(
                     self._main_config['netbox']['plugin']).NetboxDeviceDataPlugin
-
-            self._netbox_data = NetboxData(self._netbox_api, self._main_config['base_paths'])
-
             if not self._main_config.get('capirca', {}).get('disabled', False):
                 self._capirca = CapircaGenerate(self._main_config, self._netbox_api)
 
@@ -109,15 +106,26 @@ class Homer:  # pylint: disable=too-many-instance-attributes
 
         self._ignore_warning = self._main_config.get('transports', {}).get('junos', {}).get('ignore_warning', False)
         self._transport_username = self._main_config.get('transports', {}).get('username', '')
+        self._transport_password = self._main_config.get('transports', {}).get('password', '')
         self._transport_timeout = self._main_config.get('transports', {}).get('timeout', DEFAULT_TIMEOUT)
+        self._transport_jsonrpc_port = self._main_config.get('transports', {}).get('jsonrpc_port', DEFAULT_JSONRPC_PORT)
+        self._transport_jsonrpc_output = self._main_config.get('transports', {}).get('json_rpc_output', 'text')
         self._port = self._main_config.get('transports', {}).get('port', DEFAULT_PORT)
         transport_ssh_config = self._main_config.get('transports', {}).get('ssh_config', None)
         if transport_ssh_config is not None:
             transport_ssh_config = str(pathlib.Path(transport_ssh_config).expanduser())
         self._transport_ssh_config = transport_ssh_config
         self._devices = Devices(devices, devices_config, private_devices_config)
-        self._renderer = Renderer(self._main_config['base_paths']['public'], self.private_base_path)
-        self._output_base_path = pathlib.Path(self._main_config['base_paths']['output'])
+        module_dir = Path(self._main_config['base_paths']['public']) / 'modules'
+        if module_dir.is_dir():
+            sys.path.append(str(module_dir))
+
+        self._renderers = {
+            'python': PythonRenderer(self._main_config['base_paths']['public'], self.private_base_path),
+            'jinja': JinjaRenderer(self._main_config['base_paths']['public'], self.private_base_path),
+        }
+        self._transports = {'json_rpc': json_rpc, 'junos': junos}
+        self._output_base_path = Path(self._main_config['base_paths']['output'])
 
     def generate(self, query: str) -> int:
         """Generate the configuration only saving it locally, no remote action is performed.
@@ -183,13 +191,14 @@ class Homer:  # pylint: disable=too-many-instance-attributes
         successes, _ = self._execute(self._device_commit, query, message=message)
         return Homer._parse_results(successes)
 
-    def _device_generate(self, device: Device, device_config: str, _: int) -> Tuple[bool, Optional[str]]:
+    def _device_generate(self, device: Device, device_config: DeviceConfigurationBase,
+                         _: int) -> Tuple[bool, Optional[str]]:
         """Save the generated configuration in a local file.
 
         Arguments:
-            device: the device instance.
-            device_config: the generated configuration for the device.
-            attempt: the current attempt number.
+            device (homer.devices.Device): the device instance.
+            device_config (homer.templates.DeviceConfigurationBase): the generated configuration for the device.
+            attempt (int, unused): the current attempt number.
 
         Returns:
             A two-element tuple with a boolean as first parameter that represent the success of the operation
@@ -198,7 +207,11 @@ class Homer:  # pylint: disable=too-many-instance-attributes
         """
         output_path = self._output_base_path / f'{device.fqdn}{Homer.OUT_EXTENSION}'
         with open(str(output_path), 'w', encoding='utf-8') as f:
-            f.write(device_config)
+            # Juniper (Jinja)
+            if isinstance(device_config, JinjaDeviceConfiguration):
+                f.write(str(device_config))
+            else:  # Use JSON for Nokia generate
+                json.dump(device_config, f, indent=4)
             logger.info('Written configuration for %s in %s', device.fqdn, output_path)
 
         return True, None
@@ -217,14 +230,13 @@ class Homer:  # pylint: disable=too-many-instance-attributes
             to load the new configuration in the device to generate the diff.
 
         """
-        timeout = device.metadata.get('timeout', self._transport_timeout)
-        port = device.metadata.get('port', self._port)
-        with connected_device(device.fqdn, username=self._transport_username, port=port,
-                              ssh_config=self._transport_ssh_config, timeout=timeout) as connection:
+        transport_type = device.metadata.get('transport', 'junos')
+        with self._transports[transport_type].connected_device(**device.metadata['connect_args']) as connection:
             return connection.commit_check(device_config, self._ignore_warning)
 
-    def _device_commit(self, device: Device, device_config: str,  # noqa: MC0001
-                       attempt: int, *, message: str = '-') -> Tuple[bool, Optional[str]]:
+    def _device_commit(self, device: Device,  # noqa: MC0001
+                       device_config: DeviceConfigurationBase, attempt: int, *,
+                       message: str = '-') -> Tuple[bool, Optional[str]]:
         """Commit a new configuration to the device.
 
         Arguments:
@@ -242,15 +254,15 @@ class Homer:  # pylint: disable=too-many-instance-attributes
 
         """
         is_retry = attempt != 1
-        timeout = device.metadata.get('timeout', self._transport_timeout)
-        port = device.metadata.get('port', self._port)
-        with connected_device(device.fqdn, username=self._transport_username, port=port,
-                              ssh_config=self._transport_ssh_config, timeout=timeout) as connection:
+
+        transport_type = device.metadata.get('transport', 'junos')
+        with self._transports[transport_type].connected_device(**device.metadata['connect_args']) as connection:
             try:
-                connection.commit(device_config, message, ignore_warning=self._ignore_warning, is_retry=is_retry)
+                connection.commit(device_config, message, ignore_warning=self._ignore_warning,
+                                  is_retry=is_retry)
                 return True, ''
             except HomerTimeoutError:
-                raise  # To be catched later for automatic retry
+                raise  # To be caught later for automatic retry
             except HomerAbortError as e:
                 logger.warning('%s on %s', e, device.fqdn)
             except Exception as e:  # pylint: disable=broad-except
@@ -266,6 +278,7 @@ class Homer:  # pylint: disable=too-many-instance-attributes
             if path.is_file() and path.suffix == Homer.OUT_EXTENSION:
                 path.unlink()
 
+    # pylint: disable-msg=too-many-locals,too-many-nested-blocks,too-many-branches
     def _execute(self, callback: Callable, query: str, **kwargs: str) -> Tuple[Dict, DefaultDict]:  # noqa: MC0001
         """Execute Homer based on the given action and query.
 
@@ -283,21 +296,55 @@ class Homer:  # pylint: disable=too-many-instance-attributes
         """
         diffs: DefaultDict[str, list] = defaultdict(list)
         successes: Dict[bool, list] = {True: [], False: []}
+        netbox_data = None
+        if self._netbox_api is not None:
+            logger.info('Gathering global Netbox data')
+            netbox_data = NetboxData(self._netbox_api, self._main_config['base_paths'])
+
         for device in self._devices.query(query):
             logger.info('Generating configuration for %s', device.fqdn)
-
             try:
-                device_config = []
                 device_data = self._config.get(device)
-                # Render the ACLs using Capirca
-                if self._capirca is not None and 'capirca' in device_data:
-                    generated_acls = self._capirca.generate_acls(device_data['capirca'])
-                    if generated_acls:
-                        device_config.extend(generated_acls)
 
-                if self._netbox_data is not None:
+                # Set renderer and transport based on match criteria in homer config and device metadata
+                # TODO add a default or show a nice error if those keys are missing from config.yaml
+                for device_attribute in ('renderer', 'transport'):
+                    selector = self._main_config['selectors'][device_attribute]
+                    for option_name, match_criteria in selector.items():
+                        for elements in match_criteria:
+                            if all(device.metadata.get(key) == value for key, value in elements.items()):
+                                device.metadata[device_attribute] = option_name
+
+                # Set the args for device connection we use for diff and commit
+                device.metadata['connect_args'] = {
+                    'fqdn': device.fqdn,
+                    'username': self._transport_username,
+                    'timeout': device.metadata.get('timeout', self._transport_timeout)
+                }
+                transport_type = device.metadata.get('transport', 'junos')
+                if transport_type == 'junos':
+                    device.metadata['connect_args']['port'] = self._port
+                    device.metadata['connect_args']['ssh_config'] = self._transport_ssh_config
+                elif transport_type == 'json_rpc':
+                    device.metadata['connect_args']['port'] = self._transport_jsonrpc_port
+                    device.metadata['connect_args']['password'] = self._transport_password
+                    device.metadata['connect_args']['output_format'] = self._transport_jsonrpc_output
+
+                # Override global port and timeout if defined in the device config
+                if 'port' in device.metadata:
+                    device.metadata['connect_args']['port'] = device.metadata['port']
+                if 'timeout' in device.metadata:
+                    device.metadata['connect_args']['timeout'] = device.metadata['timeout']
+
+                # Render the ACLs using Capirca
+                if self._capirca and 'capirca' in device_data:
+                    generated_acls = self._capirca.generate_acls(device_data['capirca'])
+                else:
+                    generated_acls = []
+
+                if netbox_data is not None:
                     device_data['netbox'] = {
-                        'global': self._netbox_data,
+                        'global': netbox_data,
                         'device': NetboxDeviceData(self._netbox_api, self._main_config['base_paths'], device),
                     }
 
@@ -305,8 +352,9 @@ class Homer:  # pylint: disable=too-many-instance-attributes
                         device_data['netbox']['device_plugin'] = self._device_plugin(self._netbox_api,
                                                                                      self._main_config['base_paths'],
                                                                                      device)
-                # Render the Jinja templates based on yaml + netbox data
-                device_config.append(self._renderer.render(device.metadata['role'], device_data))
+                # Render the configuration based on yaml + netbox data
+                device_config = self._renderers[device.metadata.get('renderer', 'jinja')].render(
+                    device.metadata['role'], device_data, generated_acls)
             except HomerError:
                 logger.exception('Device %s failed to render the template, skipping.', device.fqdn)
                 successes[False].append(device.fqdn)
@@ -314,7 +362,7 @@ class Homer:  # pylint: disable=too-many-instance-attributes
 
             for attempt in range(1, TIMEOUT_ATTEMPTS + 1):
                 try:
-                    device_success, device_diff = callback(device, '\n'.join(device_config), attempt, **kwargs)
+                    device_success, device_diff = callback(device, device_config, attempt, **kwargs)
                     break
                 except (HomerTimeoutError, HomerConnectError) as e:
                     logger.error('Attempt %d/%d failed: %s', attempt, TIMEOUT_ATTEMPTS, e)

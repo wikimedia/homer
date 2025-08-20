@@ -60,7 +60,10 @@
                     "slug": "siteA"
                 },
                 "device_type": {
-                    "slug": "typeA"
+                    "slug": "typeA",
+                    "manufacturer": {
+                      "slug": "manufacturerA"
+                    }
                 },
                 "role": {
                     "slug": "roleA"
@@ -81,7 +84,10 @@
                     "slug": "siteA"
                 },
                 "device_type": {
-                    "slug": "typeA"
+                    "slug": "typeA",
+                    "manufacturer": {
+                      "slug": "manufacturerA"
+                    }
                 },
                 "role": {
                     "slug": "roleA"

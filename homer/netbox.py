@@ -278,6 +278,7 @@ class NetboxInventory:
                 'site': device['site']['slug'],
                 'type': device['device_type']['slug'],
                 'status': device['status'].lower(),
+                'manufacturer': device['device_type']['manufacturer']['slug']
             }
 
             # Convert Netbox interfaces into IPs

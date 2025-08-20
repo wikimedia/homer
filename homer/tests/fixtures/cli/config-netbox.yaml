@@ -11,3 +11,11 @@ netbox:
       roleB
     device_statuses:
       active
+
+selectors:
+  renderer:
+    python:
+      - manufacturer: nokia
+  transport:
+    json_rpc:
+      - manufacturer: nokia

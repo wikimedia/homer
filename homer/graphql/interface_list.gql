@@ -72,9 +72,16 @@ query ($device_id: [String!]){
             ... on InterfaceType {
                 name
                 device {
-                    role { slug }
                     name
+                    role { slug }
+                    rack { name }
+                    primary_ip4 { address }
+                    primary_ip6 { address }
+                    status
                     virtual_chassis { domain }
+                    device_type {
+                      manufacturer { slug }
+                    }
                 }
             }
         }

@@ -39,14 +39,37 @@ capirca:
 
 # Transpors configuration. [optional]
 transports:
-  username: MrFoobar  # Username to use for the SSH connection, default to system user. [optional]
+  # Username to use for the SSH [optional] or JSON-RPC [mandatory] connection, default to system user for SSH.
+  username: MrFoobar
+  password: secret  # Password to use for the JSON-RPC connection. [madatory for JSON-RPC, unused for SSH]
   ssh_config: ~/.ssh/config.homer  # Path to a dedicated SSH config for Homer. [optional]
   # The global timeout in seconds to use for all devices. Defaults to 30s [optional]
   # It can be overriden per device in the devices.yaml configuration file.
   timeout: 30
+  jsonrpc_port: 443 # Port to use for the JSON-RPC connection [optional]
+  json_rpc_output: text  # 'json', 'yaml', 'text' (native), controls diff format for JSON-RPC devices [optional]
   # JunOS specific configuration. [optional]
   # See: https://junos-pyez.readthedocs.io/en/2.3.0/jnpr.junos.utils.html#jnpr.junos.utils.config.Config.load
   junos:
     ignore_warning:
       - statement must contain additional statements
       - statement has no contents
+      - config will be applied to ports
+      - Delete all fabric member interfaces on node
+
+
+# Renderer and transport configuration.
+# Each element in the list under a renderer/transport type is a dict of attributes from
+# the device metadata to match on, for instance manufacturer, type, role etc
+selectors:
+  renderer:  # Controls which renderer is used, valid entries are 'python' and 'jinja'
+    python:  # Devices to generate the config using Python modules
+      - manufacturer: nokia
+        type: 7220-ixr-d2l
+    jinja:  # Optional, devices to generate the config using Jinja2 templates (this is default)
+      - manufacturer: juniper
+  transport:  # Controls which transport module is used, valid entries are 'json_rpc' and 'junos'
+    json_rpc:  # Devices to use the JSON-RPC HTTP API to interact with
+      - manufacturer: nokia
+    junos:  # Optional, devices to use the Juniper PyEZ library to interact with (this is default)
+      - manufacturer: juniper
