@@ -1,6 +1,14 @@
 Homer Changelog
 ---------------
 
+`v0.11.0`_ (2025-10-08)
+^^^^^^^^^^^^^^^^^^^^^^^
+
+New features
+""""""""""""
+
+Support for JSON-RPC configuration of Nokia devices.
+
 `v0.10.2`_ (2025-07-24)
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -570,3 +578,4 @@ Miscellanea
 .. _`v0.10.0`: https://github.com/wikimedia/homer/releases/tag/v0.10.0
 .. _`v0.10.1`: https://github.com/wikimedia/homer/releases/tag/v0.10.1
 .. _`v0.10.2`: https://github.com/wikimedia/homer/releases/tag/v0.10.2
+.. _`v0.11.0`: https://github.com/wikimedia/homer/releases/tag/v0.11.0
