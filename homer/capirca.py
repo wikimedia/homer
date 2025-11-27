@@ -2,7 +2,7 @@
 
 import logging
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import List, Mapping, Union
 
@@ -47,8 +47,9 @@ class CapircaGenerate():
                 if not latest_completed_run:
                     raise HomerError('Netbox capirca.GetHosts script has not been run successfully.')
                 script_result = next(latest_completed_run)
-                runtime = datetime.fromisoformat(script_result.completed[:-1])  # To remove the final Z
-                now = datetime.utcnow()
+                runtime = datetime.fromisoformat(script_result.completed.replace('Z', '+00:00'))
+                # Since timezone doesn't matter, standardize offset to 00:00
+                now = datetime.now(tz=timezone.utc)
                 # Warn the user if the Netbox data is 3 day old or more
                 if runtime < now - timedelta(days=3):
                     logger.warning('Netbox capirca.GetHosts script is > 3 days old.')
