@@ -211,10 +211,10 @@ class TestHomerNetbox:
             Path(get_fixture_path('netbox', 'device_list.json')).read_text(encoding="UTF-8")
         )
         self.requests_mock.post('/graphql/', json=device_list)  # nosec
-        capirca_script = self.mocked_pynetbox.return_value.extras.scripts.get.return_value.result
-        capirca_script.status = 'Completed'
-        capirca_script.completed = '2025-04-01 10:00:00Z'
-        capirca_script.data.output = 'device1 = 10.0.0.1\ndevices_group = device1'
+        job = mock.MagicMock()
+        job.completed = '2025-04-01 10:00:00Z'
+        job.data.output = 'device1 = 10.0.0.1\ndevices_group = device1'
+        self.mocked_pynetbox.return_value.core.jobs.filter.return_value = iter([job])
 
         self.homer = homer.Homer(self.config)
 

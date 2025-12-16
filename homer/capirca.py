@@ -36,9 +36,11 @@ class CapircaGenerate():
         # If we want to use Netbox as network definition source
         if self._config.get('capirca', {}).get('netbox_definitons', True) and netbox:
             try:
-                script_result = netbox.extras.scripts.get('capirca.GetHosts').result
-                if not script_result.completed:
-                    raise HomerError('Netbox capirca.GetHosts script is not completed or has not been run.')
+                script_id = netbox.extras.scripts.get('capirca.GetHosts').id
+                all_completed_runs = netbox.core.jobs.filter(object_id=script_id, status="completed")
+                if not all_completed_runs:
+                    raise HomerError('Netbox capirca.GetHosts script has not been run successfully.')
+                script_result = next(all_completed_runs)
                 runtime = datetime.fromisoformat(script_result.completed[:-1])  # To remove the final Z
                 now = datetime.utcnow()
                 # Warn the user if the Netbox data is 3 day old or more
