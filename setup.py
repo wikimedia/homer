@@ -33,7 +33,7 @@ EXTRAS_REQUIRE = {
         'sphinx_rtd_theme>=0.1.6',
         'sphinx-argparse>=0.1.15',
         "sphinx-autodoc-typehints>=1.9.0",
-        'Sphinx>=1.4.9',
+        'Sphinx<9.0.0',
         'types-PyYAML',
         'types-requests',
     ],
