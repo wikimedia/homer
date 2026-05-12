@@ -48,8 +48,8 @@ query ($device_id: [String!]){
                                 type { name }
                                 provider { name }
                                 cid
+                                commit_rate
                                 description
-                                termination_z { upstream_speed }
                             }
                         }
                     }
@@ -61,9 +61,9 @@ query ($device_id: [String!]){
                     type { name }
                     provider { name }
                     cid
+                    commit_rate
                     description
                     termination_a { id }
-                    termination_z { upstream_speed }
                 }
             }
         }
