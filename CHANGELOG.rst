@@ -1,6 +1,14 @@
 Homer Changelog
 ---------------
 
+`v0.11.2`_ (2026-05-14)
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Miscellanea
+"""""""""""
+
+* graphql: request 'commit_rate' for circuits and not 'termination_z.upstream_rate'
+
 `v0.11.1`_ (2026-01-12)
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -588,3 +596,4 @@ Miscellanea
 .. _`v0.10.2`: https://github.com/wikimedia/homer/releases/tag/v0.10.2
 .. _`v0.11.0`: https://github.com/wikimedia/homer/releases/tag/v0.11.0
 .. _`v0.11.1`: https://github.com/wikimedia/homer/releases/tag/v0.11.1
+.. _`v0.11.2`: https://github.com/wikimedia/homer/releases/tag/v0.11.2
