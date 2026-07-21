@@ -6,7 +6,6 @@ query ($device_id: [String!]){
         id
         lag { name }
         parent { name }
-        cable { label }
         type
         mtu
         mac_address
