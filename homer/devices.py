@@ -83,4 +83,10 @@ class Devices(UserDict):
             key, value = query_string.split(':', 1)
             return [device for device in self.data.values() if device.metadata.get(key, None) == value]
         # FQDN query
-        return [device for fqdn, device in self.items() if fnmatch.fnmatch(fqdn, query_string)]
+        # only do a full fqdn match if there is a dot in the query string.
+        devices: list[Device] = []
+        for fqdn, device in self.items():
+            name = fqdn if '.' in query_string else fqdn.split('.')[0]
+            if fnmatch.fnmatch(name, query_string):
+                devices.append(device)
+        return devices
