@@ -37,26 +37,50 @@ class Devices(UserDict):
         logger.info('Initialized %d devices', len(self.data))
 
     def query(self, query_string: str) -> List[Device]:
-        """Get the devices matching the query.
+        """Get the devices matching the query, supporting comma-separated sub-queries.
 
-        Todo:
-            If needed, expand the query capabilities with a proper syntax using pyparsing.
+        This method processes a query string that can include:
+        - Comma-separated sub-queries (e.g., "host*,db*") to match multiple patterns.
+        - Key-value pairs (e.g., "key:value") to filter devices by metadata.
+        - FQDN glob patterns (e.g., "host*") to match device FQDNs.
+
+        The results are deduplicated and sorted by FQDN before returning.
 
         Arguments:
-            query_string: the query_string to use to filter for.
+            query_string: The query string to filter devices. Can include comma-separated sub-queries,
+                        key-value pairs, or FQDN glob patterns.
 
         Raises:
-            homer.exceptions.HomerError: on invalid query.
+            homer.exceptions.HomerError: If the query is invalid or cannot be processed.
 
         Returns:
-            A list of Device objects.
+            A sorted list of unique Device objects matching the query.
+
+        """
+        results: list[Device] = []
+        for sub_query_string in query_string.split(','):  # allow multiple sub queries, comma-separated
+            for result in self._query(sub_query_string):
+                if result not in results:
+                    results.append(result)
+        logger.info("Matched %d device(s) for query '%s'", len(results), query_string)
+        return sorted(results, key=attrgetter('fqdn'))
+
+    def _query(self, query_string: str) -> list[Device]:
+        """Internal method to execute a single query and return matching devices.
+
+        Supports two query types:
+        - Key-value queries (e.g., "key:value") to filter devices by metadata.
+        - FQDN glob patterns (e.g., "host*") to match device FQDNs.
+
+        Arguments:
+            query_string: The query string to filter devices. Can be a key-value pair or an FQDN glob pattern.
+
+        Returns:
+            A list of Device objects matching the query.
 
         """
         if ':' in query_string:  # Simple key-value query
             key, value = query_string.split(':', 1)
-            results = [device for device in self.data.values() if device.metadata.get(key, None) == value]
-        else:  # FQDN query
-            results = [device for fqdn, device in self.items() if fnmatch.fnmatch(fqdn, query_string)]
-
-        logger.info("Matched %d device(s) for query '%s'", len(results), query_string)
-        return sorted(results, key=attrgetter('fqdn'))
+            return [device for device in self.data.values() if device.metadata.get(key, None) == value]
+        # FQDN query
+        return [device for fqdn, device in self.items() if fnmatch.fnmatch(fqdn, query_string)]

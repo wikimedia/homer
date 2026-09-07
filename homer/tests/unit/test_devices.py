@@ -71,3 +71,9 @@ class TestDevices:
         devices = self.devices.query('device*.*.com')
         assert len(devices) == 2
         assert sorted([device.fqdn for device in devices]) == ['device1.example.com', 'device2.example.com']
+
+    def test_query_multiple_fqdn(self):
+        """Should return the matching devices."""
+        devices = self.devices.query('device1.example.com,device2.example.com')
+        assert len(devices) == 2
+        assert sorted([device.fqdn for device in devices]) == ['device1.example.com', 'device2.example.com']
