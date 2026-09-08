@@ -1,6 +1,26 @@
 Homer Changelog
 ---------------
 
+`v0.11.3`_ (2026-09-08)
+^^^^^^^^^^^^^^^^^^^^^^^
+
+New features
+""""""""""""
+
+* Add support for multiple host queries comma separated
+* Add support for short hostname in query
+
+Minor improvements
+""""""""""""""""""
+
+* capirca.py: optimize fetching the latest completed run.
+
+Miscellanea
+"""""""""""
+
+* Tox: Add Python 3.14 support, improve Jenkins running time.
+* capirca: python 3.12 deprecates datetime.utcnow()
+
 `v0.11.2`_ (2026-05-14)
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -597,3 +617,4 @@ Miscellanea
 .. _`v0.11.0`: https://github.com/wikimedia/homer/releases/tag/v0.11.0
 .. _`v0.11.1`: https://github.com/wikimedia/homer/releases/tag/v0.11.1
 .. _`v0.11.2`: https://github.com/wikimedia/homer/releases/tag/v0.11.2
+.. _`v0.11.3`: https://github.com/wikimedia/homer/releases/tag/v0.11.3
